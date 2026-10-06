@@ -32,7 +32,7 @@ Expone endpoints de solo lectura para que el servicio de turnos (Repo 3) y la ap
 
 - Java 21
 - Docker y Docker Compose
-- Conexión a la red ZeroTier de cátedra (`93afae59630d1f1d`)
+- Conexión a la red ZeroTier de cátedra
 - Archivo `.env` con las credenciales de integración (ver `.env.example`)
 
 ## Configuración del entorno
