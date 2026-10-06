@@ -1,0 +1,24 @@
+{
+  "generator-jhipster": {
+    "applicationType": "monolith",
+    "authenticationType": "jwt",
+    "baseName": "catalogo",
+    "buildTool": "maven",
+    "cacheProvider": "no",
+    "clientFramework": "no",
+    "databaseType": "sql",
+    "devDatabaseType": "postgresql",
+    "enableHibernateCache": true,
+    "entities": ["ProfessionalCategory", "Professional", "WeeklySchedule"],
+    "jhipsterVersion": "8.11.0",
+    "jwtSecretKey": "ODJlMDU3MzNlNDBmNTg0MThmNTY1ZGZmZDA4OTZkNzcwMTVlYTBjMjhhNDkwN2FiMDZlZjM4ZTcwMWU3NWZiY2ZmNGIwYmY5MDkwZGFjNTRiNjRhNWZkZjUyNjVhOTUxOTFhYTQyNTU5N2RlZTcwZDJiZjJhMGRlYzA2MTYyMzU=",
+    "languages": ["es", "en"],
+    "lastLiquibaseTimestamp": 1791302060000,
+    "messageBroker": "kafka",
+    "nativeLanguage": "es",
+    "packageName": "ar.edu.um.programacion2.catalogo",
+    "prodDatabaseType": "postgresql",
+    "serverPort": "8081",
+    "skipClient": true
+  }
+}

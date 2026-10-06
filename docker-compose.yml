@@ -1,0 +1,24 @@
+# Docker Compose para desarrollo local del servicio de Catálogo.
+# Levanta únicamente la infraestructura propia: PostgreSQL.
+# La conexión a Redis y Kafka de cátedra se configura vía .env.
+name: catalogo
+
+services:
+  postgresql:
+    image: postgres:17.4
+    environment:
+      POSTGRES_DB: catalogo
+      POSTGRES_USER: catalogo
+      POSTGRES_PASSWORD: catalogo
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - catalogo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U catalogo -d catalogo']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  catalogo_postgres_data:

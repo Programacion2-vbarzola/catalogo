@@ -1,0 +1,59 @@
+application {
+  config {
+    baseName catalogo
+    applicationType monolith
+    packageName ar.edu.um.programacion2.catalogo
+    serverPort 8081
+    authenticationType jwt
+    buildTool maven
+    databaseType sql
+    devDatabaseType postgresql
+    prodDatabaseType postgresql
+    enableHibernateCache true
+    cacheProvider no
+    messageBroker kafka
+    clientFramework no
+    nativeLanguage es
+    languages [es, en]
+  }
+  entities ProfessionalCategory, Professional, WeeklySchedule
+}
+
+enum CatalogDayOfWeek {
+  MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+}
+
+entity ProfessionalCategory {
+  name String required maxlength(200)
+  description String maxlength(500)
+  enabled Boolean required
+  createdAt Instant
+  updatedAt Instant
+}
+
+entity Professional {
+  firstName String required maxlength(100)
+  lastName String required maxlength(100)
+  enabled Boolean required
+  createdAt Instant
+  updatedAt Instant
+}
+
+entity WeeklySchedule {
+  dayOfWeek CatalogDayOfWeek required
+  startTime String required maxlength(8)
+  endTime String required maxlength(8)
+  slotDurationMinutes Integer required min(1)
+  enabled Boolean required
+  createdAt Instant
+  updatedAt Instant
+}
+
+relationship ManyToOne {
+  Professional{category(name) required} to ProfessionalCategory
+  WeeklySchedule{professional(lastName) required} to Professional
+}
+
+dto * with mapstruct
+service * with serviceClass
+paginate Professional, WeeklySchedule with pagination

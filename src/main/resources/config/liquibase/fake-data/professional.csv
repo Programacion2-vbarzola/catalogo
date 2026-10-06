@@ -1,0 +1,11 @@
+id;first_name;last_name;enabled;created_at;updated_at;category_id
+1;Marco Antonio;Rojo Zamora;true;2026-10-06T02:24:43;2026-10-06T15:08:10;1
+2;Matilde;Reyes Mota;true;2026-10-06T01:43:40;2026-10-06T09:31:32;2
+3;Marilú;Tapia Treviño;true;2026-10-06T12:53:51;2026-10-05T18:34:05;3
+4;Yolanda;Ordóñez Banda;true;2026-10-06T11:12:28;2026-10-06T10:10:40;4
+5;Maricarmen;Berríos Godínez;false;2026-10-06T10:25:28;2026-10-05T17:13:28;5
+6;Manuela;Rojas Contreras;true;2026-10-06T01:40:57;2026-10-06T07:47:51;6
+7;Eva;Polanco Méndez;true;2026-10-06T10:46:36;2026-10-06T07:05:39;7
+8;Octavio;Montañez Alva;false;2026-10-06T10:39:06;2026-10-05T23:00:26;8
+9;Roberto;Gaitán Chávez;true;2026-10-05T16:18:27;2026-10-06T11:01:03;9
+10;Natalia;Ontiveros Henríquez;true;2026-10-05T20:46:34;2026-10-06T06:18:40;10
