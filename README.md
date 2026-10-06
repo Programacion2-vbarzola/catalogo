@@ -1,169 +1,77 @@
-# catalogo
+# Servicio de Catálogo y Sincronización
 
-This application was generated using JHipster 8.11.0, you can find documentation and help at [https://www.jhipster.tech/documentation-archive/v8.11.0](https://www.jhipster.tech/documentation-archive/v8.11.0).
+**Alumno:** Valentín Barzola
+**Materia:** Programación 2 — Proyecto Integrador 2026
+**Universidad:** Universidad de Mendoza
 
-## Project Structure
+---
 
-Node is required for generation and recommended for development. `package.json` is always generated for a better development experience with prettier, commit hooks, scripts and so on.
+## Descripción
 
-In the project root, JHipster generates configuration files for tools like git, prettier, eslint, husky, and others that are well known and you can find references in the web.
+Este repositorio contiene el **servicio de catálogo y sincronización**, uno de los dos backends del proyecto integrador. Es responsable de mantener una copia local actualizada del catálogo de categorías, profesionales y horarios semanales publicado por el servicio central de cátedra.
 
-`/src/*` structure follows default Java structure.
+Expone endpoints de solo lectura para que el servicio de turnos (Repo 3) y la app Android (Repo 1) puedan consultar profesionales y sus horarios sin acceder directamente al servicio central.
 
-- `.yo-rc.json` - Yeoman configuration file
-  JHipster configuration is stored in this file at `generator-jhipster` key. You may find `generator-jhipster-*` for specific blueprints configuration.
-- `.yo-resolve` (optional) - Yeoman conflict resolver
-  Allows to use a specific action when conflicts are found skipping prompts for files that matches a pattern. Each line should match `[pattern] [action]` with pattern been a [Minimatch](https://github.com/isaacs/minimatch#minimatch) pattern and action been one of skip (default if omitted) or force. Lines starting with `#` are considered comments and are ignored.
-- `.jhipster/*.json` - JHipster entity configuration files
-- `/src/main/docker` - Docker configurations for the application and services that the application depends on
+## Responsabilidades
 
-## Development
+- Almacenar la copia local de categorías, profesionales y horarios semanales
+- Ejecutar sincronización completa (snapshot REST) e incremental (Kafka + Redis)
+- Detectar discontinuidades de versión y reconstruir el catálogo local
+- Exponer búsqueda y filtros de profesionales resueltos 100% sobre datos locales
+- Exponer horarios vigentes de un profesional para que Repo 3 valide disponibilidad
 
-To start your application in the dev profile, run:
+## Tecnologías
 
-```
-./mvnw
-```
+- Java 21 + Spring Boot 3 (JHipster 8.11.0)
+- PostgreSQL (base de datos propia, esquema `catalogo`)
+- Kafka (consumidor de eventos `CatalogUpdated` de cátedra)
+- Redis (lectura del catálogo publicado por cátedra)
+- Maven
 
-For further instructions on how to develop with JHipster, have a look at [Using JHipster in development][].
+## Requisitos previos
 
-## Building for production
+- Java 21
+- Docker y Docker Compose
+- Conexión a la red ZeroTier de cátedra (`93afae59630d1f1d`)
+- Archivo `.env` con las credenciales de integración (ver `.env.example`)
 
-### Packaging as jar
+## Configuración del entorno
 
-To build the final jar and optimize the catalogo application for production, run:
+Copiar el archivo de ejemplo y completar con los valores recibidos al registrar la cuenta técnica:
 
-```
-./mvnw -Pprod clean verify
-```
-
-To ensure everything worked, run:
-
-```
-java -jar target/*.jar
-```
-
-Refer to [Using JHipster in production][] for more details.
-
-### Packaging as war
-
-To package your application as a war in order to deploy it to an application server, run:
-
-```
-./mvnw -Pprod,war clean verify
+```bash
+cp .env.example .env
+# editar .env con los valores reales
 ```
 
-### JHipster Control Center
+## Levantar el servicio
 
-JHipster Control Center can help you manage and control your application(s). You can start a local control center server (accessible on http://localhost:7419) with:
+```bash
+# 1. Levantar la base de datos
+docker compose up -d
 
-```
-docker compose -f src/main/docker/jhipster-control-center.yml up
-```
-
-## Testing
-
-### Spring Boot tests
-
-To launch your application's tests, run:
-
-```
-./mvnw verify
+# 2. Levantar el backend
+./mvnw spring-boot:run
 ```
 
-## Others
+El servicio queda disponible en `http://localhost:8081`.
 
-### Code quality using Sonar
+## Ejecutar los tests
 
-Sonar is used to analyse code quality. You can start a local Sonar server (accessible on http://localhost:9001) with:
-
-```
-docker compose -f src/main/docker/sonar.yml up -d
+```bash
+./mvnw test
 ```
 
-Note: we have turned off forced authentication redirect for UI in [src/main/docker/sonar.yml](src/main/docker/sonar.yml) for out of the box experience while trying out SonarQube, for real use cases turn it back on.
-
-You can run a Sonar analysis with using the [sonar-scanner](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner) or by using the maven plugin.
-
-Then, run a Sonar analysis:
+## Estructura del proyecto
 
 ```
-./mvnw -Pprod clean verify sonar:sonar -Dsonar.login=admin -Dsonar.password=admin
+src/main/java/.../
+├── domain/          # Entidades JPA (ProfessionalCategory, Professional, WeeklySchedule, CatalogSyncStatus)
+├── repository/      # Acceso a datos (Spring Data JPA)
+├── service/         # Lógica de negocio y sincronización
+│   ├── dto/         # Objetos de transferencia de datos
+│   └── mapper/      # Conversión Entity ↔ DTO (MapStruct)
+├── web/rest/        # Endpoints HTTP
+├── broker/          # Consumidor Kafka
+└── config/          # Configuración (seguridad, propiedades, etc.)
 ```
-
-If you need to re-run the Sonar phase, please be sure to specify at least the `initialize` phase since Sonar properties are loaded from the sonar-project.properties file.
-
-```
-./mvnw initialize sonar:sonar -Dsonar.login=admin -Dsonar.password=admin
-```
-
-Additionally, Instead of passing `sonar.password` and `sonar.login` as CLI arguments, these parameters can be configured from [sonar-project.properties](sonar-project.properties) as shown below:
-
-```
-sonar.login=admin
-sonar.password=admin
-```
-
-For more information, refer to the [Code quality page][].
-
-### Docker Compose support
-
-JHipster generates a number of Docker Compose configuration files in the [src/main/docker/](src/main/docker/) folder to launch required third party services.
-
-For example, to start required services in Docker containers, run:
-
-```
-docker compose -f src/main/docker/services.yml up -d
-```
-
-To stop and remove the containers, run:
-
-```
-docker compose -f src/main/docker/services.yml down
-```
-
-[Spring Docker Compose Integration](https://docs.spring.io/spring-boot/reference/features/dev-services.html) is enabled by default. It's possible to disable it in application.yml:
-
-```yaml
-spring:
-  ...
-  docker:
-    compose:
-      enabled: false
-```
-
-You can also fully dockerize your application and all the services that it depends on.
-To achieve this, first build a Docker image of your app by running:
-
-```sh
-npm run java:docker
-```
-
-Or build a arm64 Docker image when using an arm64 processor os like MacOS with M1 processor family running:
-
-```sh
-npm run java:docker:arm64
-```
-
-Then run:
-
-```sh
-docker compose -f src/main/docker/app.yml up -d
-```
-
-For more information refer to [Using Docker and Docker-Compose][], this page also contains information on the Docker Compose sub-generator (`jhipster docker-compose`), which is able to generate Docker configurations for one or several JHipster applications.
-
-## Continuous Integration (optional)
-
-To configure CI for your project, run the ci-cd sub-generator (`jhipster ci-cd`), this will let you generate configuration files for a number of Continuous Integration systems. Consult the [Setting up Continuous Integration][] page for more information.
-
-[JHipster Homepage and latest documentation]: https://www.jhipster.tech
-[JHipster 8.11.0 archive]: https://www.jhipster.tech/documentation-archive/v8.11.0
-[Using JHipster in development]: https://www.jhipster.tech/documentation-archive/v8.11.0/development/
-[Using Docker and Docker-Compose]: https://www.jhipster.tech/documentation-archive/v8.11.0/docker-compose
-[Using JHipster in production]: https://www.jhipster.tech/documentation-archive/v8.11.0/production/
-[Running tests page]: https://www.jhipster.tech/documentation-archive/v8.11.0/running-tests/
-[Code quality page]: https://www.jhipster.tech/documentation-archive/v8.11.0/code-quality/
-[Setting up Continuous Integration]: https://www.jhipster.tech/documentation-archive/v8.11.0/setting-up-ci/
-[Node.js]: https://nodejs.org/
-[NPM]: https://www.npmjs.com/
