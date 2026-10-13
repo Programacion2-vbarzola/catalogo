@@ -62,16 +62,29 @@ El servicio queda disponible en `http://localhost:8081`.
 ./mvnw test
 ```
 
-## Estructura del proyecto
+## Estructura del proyecto (Arquitectura Hexagonal)
 
 ```
-src/main/java/.../
-├── domain/          # Entidades JPA (ProfessionalCategory, Professional, WeeklySchedule, CatalogSyncStatus)
-├── repository/      # Acceso a datos (Spring Data JPA)
-├── service/         # Lógica de negocio y sincronización
-│   ├── dto/         # Objetos de transferencia de datos
-│   └── mapper/      # Conversión Entity ↔ DTO (MapStruct)
-├── web/rest/        # Endpoints HTTP
-├── broker/          # Consumidor Kafka
-└── config/          # Configuración (seguridad, propiedades, etc.)
+src/main/java/com/vbarzola/catalogo/
+│
+├── domain/                    # Núcleo del dominio (sin dependencias de framework)
+│   ├── model/                 #   Entidades de dominio (ProfessionalCategory, Professional, WeeklySchedule, CatalogSyncStatus)
+│   ├── port/
+│   │   ├── in/                #   Puertos de entrada — interfaces de casos de uso
+│   │   └── out/               #   Puertos de salida — interfaces de repositorios
+│   ├── service/               #   Servicios de dominio (implementan los puertos de entrada)
+│   ├── dto/                   #   Objetos de transferencia de datos
+│   └── mapper/                #   Conversión Entity ↔ DTO (MapStruct)
+│
+├── adapter/
+│   ├── in/
+│   │   ├── rest/              #   Controladores REST (implementan puertos de entrada vía HTTP)
+│   │   └── kafka/             #   Consumidor Kafka (eventos CatalogUpdated de cátedra — Sprint 1)
+│   └── out/
+│       └── persistence/       #   Repositorios Spring Data JPA (implementan puertos de salida)
+│
+├── config/                    # Configuración de Spring Boot (seguridad, propiedades, etc.)
+├── security/                  # Utilidades de seguridad JWT
+├── broker/                    # Infraestructura Kafka generada por JHipster (SSE)
+└── web/rest/                  # Endpoints de gestión de usuarios generados por JHipster
 ```

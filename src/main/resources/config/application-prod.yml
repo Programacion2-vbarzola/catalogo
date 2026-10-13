@@ -17,7 +17,7 @@ logging:
   level:
     ROOT: INFO
     tech.jhipster: INFO
-    ar.edu.um.programacion2.catalogo: INFO
+    com.vbarzola.catalogo: INFO
 
 management:
   prometheus:

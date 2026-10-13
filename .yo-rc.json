@@ -16,7 +16,7 @@
     "lastLiquibaseTimestamp": 1791302060000,
     "messageBroker": "kafka",
     "nativeLanguage": "es",
-    "packageName": "ar.edu.um.programacion2.catalogo",
+    "packageName": "com.vbarzola.catalogo",
     "prodDatabaseType": "postgresql",
     "serverPort": "8081",
     "skipClient": true

@@ -1,0 +1,39 @@
+package com.vbarzola.catalogo.architecture;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+
+import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
+
+/**
+ * Verifies that the hexagonal architecture constraints hold:
+ *
+ * 1. The domain layer (model, ports, services, DTOs, mappers) must NOT depend on any adapter.
+ * 2. Input adapters (REST, Kafka) must NOT depend on output adapters (persistence).
+ *
+ * This guarantees the domain core is framework-independent and testable in isolation,
+ * and that REST/Kafka adapters are not tightly coupled to persistence concerns.
+ */
+@AnalyzeClasses(packages = "com.vbarzola.catalogo", importOptions = DoNotIncludeTests.class)
+public class HexagonalArchitectureTest {
+
+    @ArchTest
+    static final ArchRule domain_must_not_depend_on_adapters = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.domain..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.adapter..")
+        .as("Domain layer must not depend on any adapter");
+
+    @ArchTest
+    static final ArchRule in_adapters_must_not_depend_on_out_adapters = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.adapter.in..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.adapter.out..")
+        .as("Input adapters must not depend on output adapters");
+}
