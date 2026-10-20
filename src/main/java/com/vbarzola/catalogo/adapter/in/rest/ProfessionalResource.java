@@ -3,6 +3,9 @@ package com.vbarzola.catalogo.adapter.in.rest;
 import com.vbarzola.catalogo.domain.dto.ProfessionalDTO;
 import com.vbarzola.catalogo.domain.port.in.ProfessionalUseCase;
 import com.vbarzola.catalogo.web.rest.errors.BadRequestAlertException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -25,6 +28,7 @@ import tech.jhipster.web.util.ResponseUtil;
 
 @RestController
 @RequestMapping("/api/professionals")
+@Tag(name = "Professionals", description = "Gestión de profesionales del catálogo")
 public class ProfessionalResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProfessionalResource.class);
@@ -40,6 +44,9 @@ public class ProfessionalResource {
     }
 
     @PostMapping("")
+    @Operation(summary = "Crear profesional", description = "Guarda un nuevo profesional")
+    @ApiResponse(responseCode = "201", description = "Profesional creado exitosamente")
+    @ApiResponse(responseCode = "400", description = "Datos inválidos")
     public ResponseEntity<ProfessionalDTO> createProfessional(@Valid @RequestBody ProfessionalDTO professionalDTO)
         throws URISyntaxException {
         LOG.debug("REST request to save Professional : {}", professionalDTO);
@@ -53,6 +60,9 @@ public class ProfessionalResource {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Actualizar profesional", description = "Actualiza completamente un profesional existente")
+    @ApiResponse(responseCode = "200", description = "Profesional actualizado")
+    @ApiResponse(responseCode = "404", description = "Profesional no encontrado")
     public ResponseEntity<ProfessionalDTO> updateProfessional(
         @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody ProfessionalDTO professionalDTO
@@ -74,6 +84,9 @@ public class ProfessionalResource {
     }
 
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    @Operation(summary = "Actualizar parcialmente profesional", description = "Actualiza solo los campos proporcionados de un profesional")
+    @ApiResponse(responseCode = "200", description = "Profesional parcialmente actualizado")
+    @ApiResponse(responseCode = "404", description = "Profesional no encontrado")
     public ResponseEntity<ProfessionalDTO> partialUpdateProfessional(
         @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody ProfessionalDTO professionalDTO
@@ -96,6 +109,8 @@ public class ProfessionalResource {
     }
 
     @GetMapping("")
+    @Operation(summary = "Listar profesionales", description = "Retorna la lista de profesionales con paginación y carga de relaciones")
+    @ApiResponse(responseCode = "200", description = "Lista de profesionales")
     public ResponseEntity<List<ProfessionalDTO>> getAllProfessionals(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
         @RequestParam(name = "eagerload", required = false, defaultValue = "true") boolean eagerload
@@ -107,12 +122,18 @@ public class ProfessionalResource {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener profesional por ID", description = "Retorna un profesional específico con sus relaciones")
+    @ApiResponse(responseCode = "200", description = "Profesional encontrado")
+    @ApiResponse(responseCode = "404", description = "Profesional no encontrado")
     public ResponseEntity<ProfessionalDTO> getProfessional(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Professional : {}", id);
         return ResponseUtil.wrapOrNotFound(useCase.findOne(id));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar profesional", description = "Elimina un profesional por su ID")
+    @ApiResponse(responseCode = "204", description = "Profesional eliminado")
+    @ApiResponse(responseCode = "404", description = "Profesional no encontrado")
     public ResponseEntity<Void> deleteProfessional(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Professional : {}", id);
         useCase.delete(id);

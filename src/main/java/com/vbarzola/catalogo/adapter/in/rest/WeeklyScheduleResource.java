@@ -3,6 +3,9 @@ package com.vbarzola.catalogo.adapter.in.rest;
 import com.vbarzola.catalogo.domain.dto.WeeklyScheduleDTO;
 import com.vbarzola.catalogo.domain.port.in.WeeklyScheduleUseCase;
 import com.vbarzola.catalogo.web.rest.errors.BadRequestAlertException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -25,6 +28,7 @@ import tech.jhipster.web.util.ResponseUtil;
 
 @RestController
 @RequestMapping("/api/weekly-schedules")
+@Tag(name = "Weekly Schedules", description = "Gestión de horarios semanales de profesionales")
 public class WeeklyScheduleResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(WeeklyScheduleResource.class);
@@ -40,6 +44,9 @@ public class WeeklyScheduleResource {
     }
 
     @PostMapping("")
+    @Operation(summary = "Crear horario semanal", description = "Guarda un nuevo horario semanal para un profesional")
+    @ApiResponse(responseCode = "201", description = "Horario creado exitosamente")
+    @ApiResponse(responseCode = "400", description = "Datos inválidos")
     public ResponseEntity<WeeklyScheduleDTO> createWeeklySchedule(@Valid @RequestBody WeeklyScheduleDTO weeklyScheduleDTO)
         throws URISyntaxException {
         LOG.debug("REST request to save WeeklySchedule : {}", weeklyScheduleDTO);
@@ -53,6 +60,9 @@ public class WeeklyScheduleResource {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Actualizar horario semanal", description = "Actualiza completamente un horario existente")
+    @ApiResponse(responseCode = "200", description = "Horario actualizado")
+    @ApiResponse(responseCode = "404", description = "Horario no encontrado")
     public ResponseEntity<WeeklyScheduleDTO> updateWeeklySchedule(
         @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody WeeklyScheduleDTO weeklyScheduleDTO
@@ -74,6 +84,9 @@ public class WeeklyScheduleResource {
     }
 
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    @Operation(summary = "Actualizar parcialmente horario semanal", description = "Actualiza solo los campos proporcionados de un horario")
+    @ApiResponse(responseCode = "200", description = "Horario parcialmente actualizado")
+    @ApiResponse(responseCode = "404", description = "Horario no encontrado")
     public ResponseEntity<WeeklyScheduleDTO> partialUpdateWeeklySchedule(
         @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody WeeklyScheduleDTO weeklyScheduleDTO
@@ -96,6 +109,8 @@ public class WeeklyScheduleResource {
     }
 
     @GetMapping("")
+    @Operation(summary = "Listar horarios semanales", description = "Retorna la lista de horarios semanales con paginación")
+    @ApiResponse(responseCode = "200", description = "Lista de horarios")
     public ResponseEntity<List<WeeklyScheduleDTO>> getAllWeeklySchedules(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable,
         @RequestParam(name = "eagerload", required = false, defaultValue = "true") boolean eagerload
@@ -107,12 +122,18 @@ public class WeeklyScheduleResource {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener horario semanal por ID", description = "Retorna un horario específico con sus relaciones")
+    @ApiResponse(responseCode = "200", description = "Horario encontrado")
+    @ApiResponse(responseCode = "404", description = "Horario no encontrado")
     public ResponseEntity<WeeklyScheduleDTO> getWeeklySchedule(@PathVariable("id") Long id) {
         LOG.debug("REST request to get WeeklySchedule : {}", id);
         return ResponseUtil.wrapOrNotFound(useCase.findOne(id));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar horario semanal", description = "Elimina un horario por su ID")
+    @ApiResponse(responseCode = "204", description = "Horario eliminado")
+    @ApiResponse(responseCode = "404", description = "Horario no encontrado")
     public ResponseEntity<Void> deleteWeeklySchedule(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete WeeklySchedule : {}", id);
         useCase.delete(id);
