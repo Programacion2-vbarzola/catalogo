@@ -1,6 +1,7 @@
 package com.vbarzola.catalogo.domain.port.out;
 
 import com.vbarzola.catalogo.domain.model.WeeklySchedule;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,6 @@ public interface WeeklyScheduleRepositoryPort {
     boolean existsById(Long id);
 
     void deleteAll();
+
+    List<WeeklySchedule> findByProfessionalId(Long professionalId);
 }

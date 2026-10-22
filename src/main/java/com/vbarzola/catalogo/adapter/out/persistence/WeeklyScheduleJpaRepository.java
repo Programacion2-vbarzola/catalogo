@@ -39,4 +39,10 @@ public interface WeeklyScheduleJpaRepository extends JpaRepository<WeeklySchedul
         "select weeklySchedule from WeeklySchedule weeklySchedule left join fetch weeklySchedule.professional where weeklySchedule.id =:id"
     )
     Optional<WeeklySchedule> findOneWithToOneRelationships(@Param("id") Long id);
+
+    @Override
+    @Query(
+        "select ws from WeeklySchedule ws left join fetch ws.professional p left join fetch p.category" + " where p.id = :professionalId"
+    )
+    List<WeeklySchedule> findByProfessionalId(@Param("professionalId") Long professionalId);
 }

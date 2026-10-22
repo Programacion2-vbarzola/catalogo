@@ -1,6 +1,7 @@
 package com.vbarzola.catalogo.adapter.in.rest;
 
 import com.vbarzola.catalogo.domain.dto.WeeklyScheduleDTO;
+import com.vbarzola.catalogo.domain.port.in.GetWeeklySchedulesUseCase;
 import com.vbarzola.catalogo.domain.port.in.WeeklyScheduleUseCase;
 import com.vbarzola.catalogo.web.rest.errors.BadRequestAlertException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,9 +39,11 @@ public class WeeklyScheduleResource {
     private String applicationName;
 
     private final WeeklyScheduleUseCase useCase;
+    private final GetWeeklySchedulesUseCase getSchedulesUseCase;
 
-    public WeeklyScheduleResource(WeeklyScheduleUseCase useCase) {
+    public WeeklyScheduleResource(WeeklyScheduleUseCase useCase, GetWeeklySchedulesUseCase getSchedulesUseCase) {
         this.useCase = useCase;
+        this.getSchedulesUseCase = getSchedulesUseCase;
     }
 
     @PostMapping("")
@@ -119,6 +122,14 @@ public class WeeklyScheduleResource {
         Page<WeeklyScheduleDTO> page = eagerload ? useCase.findAllWithEagerRelationships(pageable) : useCase.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/by-professional")
+    @Operation(summary = "Obtener horarios por profesional", description = "Retorna todos los horarios semanales de un profesional")
+    @ApiResponse(responseCode = "200", description = "Lista de horarios del profesional")
+    public ResponseEntity<List<WeeklyScheduleDTO>> getByProfessional(@RequestParam Long professionalId) {
+        LOG.debug("REST request to get WeeklySchedules for professionalId={}", professionalId);
+        return ResponseEntity.ok(getSchedulesUseCase.getByProfessionalId(professionalId));
     }
 
     @GetMapping("/{id}")
