@@ -41,11 +41,11 @@ public interface ProfessionalJpaRepository extends JpaRepository<Professional, L
     @Override
     @Query(
         value = "select p from Professional p left join fetch p.category c" +
-        " where (:name is null or lower(concat(p.firstName, ' ', p.lastName)) like lower(concat('%', :name, '%')))" +
+        " where (cast(:name as String) is null or lower(concat(p.firstName, ' ', p.lastName)) like lower(concat('%', cast(:name as String), '%')))" +
         " and (:categoryId is null or c.id = :categoryId)" +
         " and (:enabled is null or p.enabled = :enabled)",
         countQuery = "select count(p) from Professional p left join p.category c" +
-        " where (:name is null or lower(concat(p.firstName, ' ', p.lastName)) like lower(concat('%', :name, '%')))" +
+        " where (cast(:name as String) is null or lower(concat(p.firstName, ' ', p.lastName)) like lower(concat('%', cast(:name as String), '%')))" +
         " and (:categoryId is null or c.id = :categoryId)" +
         " and (:enabled is null or p.enabled = :enabled)"
     )
