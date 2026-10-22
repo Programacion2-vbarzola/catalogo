@@ -2,6 +2,7 @@ package com.vbarzola.catalogo.adapter.in.rest;
 
 import com.vbarzola.catalogo.domain.dto.ProfessionalDTO;
 import com.vbarzola.catalogo.domain.port.in.ProfessionalUseCase;
+import com.vbarzola.catalogo.domain.port.in.SearchProfessionalsUseCase;
 import com.vbarzola.catalogo.web.rest.errors.BadRequestAlertException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,9 +39,11 @@ public class ProfessionalResource {
     private String applicationName;
 
     private final ProfessionalUseCase useCase;
+    private final SearchProfessionalsUseCase searchUseCase;
 
-    public ProfessionalResource(ProfessionalUseCase useCase) {
+    public ProfessionalResource(ProfessionalUseCase useCase, SearchProfessionalsUseCase searchUseCase) {
         this.useCase = useCase;
+        this.searchUseCase = searchUseCase;
     }
 
     @PostMapping("")
@@ -117,6 +120,21 @@ public class ProfessionalResource {
     ) {
         LOG.debug("REST request to get a page of Professionals");
         Page<ProfessionalDTO> page = eagerload ? useCase.findAllWithEagerRelationships(pageable) : useCase.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Buscar profesionales", description = "Filtra profesionales por nombre, categoría y/o estado habilitado")
+    @ApiResponse(responseCode = "200", description = "Resultados de búsqueda")
+    public ResponseEntity<List<ProfessionalDTO>> searchProfessionals(
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) Boolean enabled,
+        @org.springdoc.core.annotations.ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to search Professionals: name={}, categoryId={}, enabled={}", name, categoryId, enabled);
+        Page<ProfessionalDTO> page = searchUseCase.search(name, categoryId, enabled, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }

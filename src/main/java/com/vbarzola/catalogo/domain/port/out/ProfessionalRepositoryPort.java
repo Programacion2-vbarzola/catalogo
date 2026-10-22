@@ -21,4 +21,6 @@ public interface ProfessionalRepositoryPort {
     boolean existsById(Long id);
 
     void deleteAll();
+
+    Page<Professional> search(String name, Long categoryId, Boolean enabled, Pageable pageable);
 }
