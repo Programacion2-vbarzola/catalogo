@@ -3,6 +3,8 @@ package com.vbarzola.catalogo.service.mapper;
 import static com.vbarzola.catalogo.domain.WeeklyScheduleAsserts.*;
 import static com.vbarzola.catalogo.domain.WeeklyScheduleTestSamples.*;
 
+import com.vbarzola.catalogo.domain.mapper.WeeklyScheduleMapper;
+import com.vbarzola.catalogo.domain.mapper.WeeklyScheduleMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

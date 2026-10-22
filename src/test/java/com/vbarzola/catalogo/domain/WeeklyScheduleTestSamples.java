@@ -1,5 +1,8 @@
 package com.vbarzola.catalogo.domain;
 
+import com.vbarzola.catalogo.domain.model.Professional;
+import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
+import com.vbarzola.catalogo.domain.model.WeeklySchedule;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;

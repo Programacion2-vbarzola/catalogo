@@ -57,6 +57,8 @@ local.properties
 *.orig
 classes/
 out/
+!src/**/adapter/out/
+!src/**/port/out/
 
 ######################
 # Visual Studio Code

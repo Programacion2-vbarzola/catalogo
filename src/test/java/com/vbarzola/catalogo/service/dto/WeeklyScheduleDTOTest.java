@@ -2,6 +2,7 @@ package com.vbarzola.catalogo.service.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.vbarzola.catalogo.domain.dto.WeeklyScheduleDTO;
 import com.vbarzola.catalogo.web.rest.TestUtil;
 import org.junit.jupiter.api.Test;
 

@@ -53,6 +53,7 @@ public class ApplicationProperties {
         private String kafkaCatalogTopic;
         private String kafkaAppointmentActionsTopic;
         private String kafkaAppointmentPhoneTopic;
+        private String catedraJwt;
 
         public String getRestBaseUrl() {
             return restBaseUrl;
@@ -148,6 +149,14 @@ public class ApplicationProperties {
 
         public void setKafkaAppointmentPhoneTopic(String kafkaAppointmentPhoneTopic) {
             this.kafkaAppointmentPhoneTopic = kafkaAppointmentPhoneTopic;
+        }
+
+        public String getCatedraJwt() {
+            return catedraJwt;
+        }
+
+        public void setCatedraJwt(String catedraJwt) {
+            this.catedraJwt = catedraJwt;
         }
     }
     // jhipster-needle-application-properties-property-class

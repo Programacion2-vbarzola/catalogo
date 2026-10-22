@@ -15,7 +15,8 @@ class TechnicalStructureTest {
     // prettier-ignore
     @ArchTest
     static final ArchRule respectsTechnicalArchitectureLayers = layeredArchitecture()
-        // No consideringAllDependencies() — new hexagonal adapter.* packages are validated by HexagonalArchitectureTest
+        // consideringOnlyDependenciesInLayers: adapter.out.catedra.* and broker.* are outside these layers; they are checked by HexagonalArchitectureTest
+        .consideringOnlyDependenciesInLayers()
         .layer("Config").definedBy("..config..")
         .layer("Web").definedBy("..web..", "..adapter.in..")
         .optionalLayer("Service").definedBy("..service..")

@@ -3,6 +3,8 @@ package com.vbarzola.catalogo.service.mapper;
 import static com.vbarzola.catalogo.domain.ProfessionalAsserts.*;
 import static com.vbarzola.catalogo.domain.ProfessionalTestSamples.*;
 
+import com.vbarzola.catalogo.domain.mapper.ProfessionalMapper;
+import com.vbarzola.catalogo.domain.mapper.ProfessionalMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

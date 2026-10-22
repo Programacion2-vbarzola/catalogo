@@ -3,6 +3,7 @@ package com.vbarzola.catalogo.domain;
 import static com.vbarzola.catalogo.domain.ProfessionalCategoryTestSamples.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.web.rest.TestUtil;
 import org.junit.jupiter.api.Test;
 
