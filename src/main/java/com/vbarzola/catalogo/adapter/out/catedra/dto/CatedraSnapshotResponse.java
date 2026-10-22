@@ -4,29 +4,28 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;
 import java.util.List;
 
-// TODO: Verificar nombres exactos de campos contra la documentación de la API de cátedra
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CatedraSnapshotResponse {
 
-    private Long version;
-    private List<CategoryDTO> categories;
+    private Long snapshotVersion;
+    private List<CategoryDTO> professionalCategories;
     private List<ProfessionalDTO> professionals;
-    private List<ScheduleDTO> schedules;
+    private List<ScheduleDTO> weeklySchedules;
 
-    public Long getVersion() {
-        return version;
+    public Long getSnapshotVersion() {
+        return snapshotVersion;
     }
 
-    public void setVersion(Long version) {
-        this.version = version;
+    public void setSnapshotVersion(Long snapshotVersion) {
+        this.snapshotVersion = snapshotVersion;
     }
 
-    public List<CategoryDTO> getCategories() {
-        return categories;
+    public List<CategoryDTO> getProfessionalCategories() {
+        return professionalCategories;
     }
 
-    public void setCategories(List<CategoryDTO> categories) {
-        this.categories = categories;
+    public void setProfessionalCategories(List<CategoryDTO> professionalCategories) {
+        this.professionalCategories = professionalCategories;
     }
 
     public List<ProfessionalDTO> getProfessionals() {
@@ -37,12 +36,12 @@ public class CatedraSnapshotResponse {
         this.professionals = professionals;
     }
 
-    public List<ScheduleDTO> getSchedules() {
-        return schedules;
+    public List<ScheduleDTO> getWeeklySchedules() {
+        return weeklySchedules;
     }
 
-    public void setSchedules(List<ScheduleDTO> schedules) {
-        this.schedules = schedules;
+    public void setWeeklySchedules(List<ScheduleDTO> weeklySchedules) {
+        this.weeklySchedules = weeklySchedules;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

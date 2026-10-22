@@ -19,13 +19,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-// TODO: Verificar endpoint exacto y formato de respuesta contra la documentación de la API de cátedra
 @Component
 public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(CatedraSnapshotRestAdapter.class);
 
-    private static final String SNAPSHOT_PATH = "/api/catalog";
+    private static final String SNAPSHOT_PATH = "/api/synchronization/snapshot";
 
     private final RestClient restClient;
 
@@ -52,9 +51,9 @@ public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
     }
 
     private CatalogSnapshot mapToDomain(CatedraSnapshotResponse response) {
-        long version = response.getVersion() != null ? response.getVersion() : 0L;
+        long version = response.getSnapshotVersion() != null ? response.getSnapshotVersion() : 0L;
 
-        List<ProfessionalCategory> categories = mapCategories(response.getCategories());
+        List<ProfessionalCategory> categories = mapCategories(response.getProfessionalCategories());
         Map<Long, ProfessionalCategory> categoryById = categories
             .stream()
             .collect(Collectors.toMap(ProfessionalCategory::getId, Function.identity()));
@@ -64,7 +63,7 @@ public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
             .stream()
             .collect(Collectors.toMap(Professional::getId, Function.identity()));
 
-        List<WeeklySchedule> schedules = mapSchedules(response.getSchedules(), professionalById);
+        List<WeeklySchedule> schedules = mapSchedules(response.getWeeklySchedules(), professionalById);
 
         return new CatalogSnapshot(version, categories, professionals, schedules);
     }
