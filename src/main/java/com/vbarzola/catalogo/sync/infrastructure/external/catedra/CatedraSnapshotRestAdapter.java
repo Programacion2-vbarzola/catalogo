@@ -1,13 +1,13 @@
-package com.vbarzola.catalogo.adapter.out.catedra;
+package com.vbarzola.catalogo.sync.infrastructure.external.catedra;
 
-import com.vbarzola.catalogo.adapter.out.catedra.dto.CatedraSnapshotResponse;
 import com.vbarzola.catalogo.config.ApplicationProperties;
-import com.vbarzola.catalogo.domain.model.CatalogSnapshot;
-import com.vbarzola.catalogo.domain.port.out.CatedraSnapshotClient;
 import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.schedule.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.schedule.domain.model.enumeration.CatalogDayOfWeek;
+import com.vbarzola.catalogo.sync.domain.model.CatalogSnapshot;
+import com.vbarzola.catalogo.sync.domain.ports.out.CatedraSnapshotClient;
+import com.vbarzola.catalogo.sync.infrastructure.external.catedra.dto.CatedraSnapshotResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -90,4 +90,22 @@ public class HexagonalArchitectureTest {
         .dependOnClassesThat()
         .resideInAPackage("com.vbarzola.catalogo.schedule.infrastructure.persistence..")
         .as("schedule web adapters must not depend on schedule persistence adapters");
+
+    @ArchTest
+    static final ArchRule sync_domain_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.sync.domain..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.sync.infrastructure..")
+        .as("sync domain layer must not depend on sync infrastructure");
+
+    @ArchTest
+    static final ArchRule sync_application_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.sync.application..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.sync.infrastructure..")
+        .as("sync application layer must not depend on sync infrastructure");
 }

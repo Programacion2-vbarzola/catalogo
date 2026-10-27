@@ -1,4 +1,4 @@
-package com.vbarzola.catalogo.adapter.out.catedra.dto;
+package com.vbarzola.catalogo.sync.infrastructure.external.catedra.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;

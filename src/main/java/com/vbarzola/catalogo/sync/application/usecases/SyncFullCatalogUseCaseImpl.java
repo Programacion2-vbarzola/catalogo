@@ -1,47 +1,35 @@
-package com.vbarzola.catalogo.domain.service;
+package com.vbarzola.catalogo.sync.application.usecases;
 
-import com.vbarzola.catalogo.domain.model.CatalogSnapshot;
-import com.vbarzola.catalogo.domain.model.CatalogSyncStatus;
-import com.vbarzola.catalogo.domain.port.in.SyncFullCatalogUseCase;
-import com.vbarzola.catalogo.domain.port.out.CatalogSyncStatusRepositoryPort;
-import com.vbarzola.catalogo.domain.port.out.CatedraSnapshotClient;
 import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalCategoryRepository;
 import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalRepository;
 import com.vbarzola.catalogo.schedule.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.schedule.domain.ports.out.WeeklyScheduleRepository;
+import com.vbarzola.catalogo.sync.domain.model.CatalogSnapshot;
+import com.vbarzola.catalogo.sync.domain.model.CatalogSyncStatus;
+import com.vbarzola.catalogo.sync.domain.ports.in.SyncFullCatalogUseCase;
+import com.vbarzola.catalogo.sync.domain.ports.out.CatalogSyncStatusRepository;
+import com.vbarzola.catalogo.sync.domain.ports.out.CatedraSnapshotClient;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@Component
+@RequiredArgsConstructor
 @Transactional
-public class SyncFullCatalogService implements SyncFullCatalogUseCase {
+public class SyncFullCatalogUseCaseImpl implements SyncFullCatalogUseCase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SyncFullCatalogService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SyncFullCatalogUseCaseImpl.class);
 
     private final CatedraSnapshotClient snapshotClient;
     private final ProfessionalCategoryRepository categoryRepo;
     private final ProfessionalRepository professionalRepo;
     private final WeeklyScheduleRepository scheduleRepo;
-    private final CatalogSyncStatusRepositoryPort syncStatusRepo;
-
-    public SyncFullCatalogService(
-        CatedraSnapshotClient snapshotClient,
-        ProfessionalCategoryRepository categoryRepo,
-        ProfessionalRepository professionalRepo,
-        WeeklyScheduleRepository scheduleRepo,
-        CatalogSyncStatusRepositoryPort syncStatusRepo
-    ) {
-        this.snapshotClient = snapshotClient;
-        this.categoryRepo = categoryRepo;
-        this.professionalRepo = professionalRepo;
-        this.scheduleRepo = scheduleRepo;
-        this.syncStatusRepo = syncStatusRepo;
-    }
+    private final CatalogSyncStatusRepository syncStatusRepo;
 
     @Override
     public void syncFullCatalog() {

@@ -1,4 +1,4 @@
-package com.vbarzola.catalogo.domain.model;
+package com.vbarzola.catalogo.sync.domain.model;
 
 import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;

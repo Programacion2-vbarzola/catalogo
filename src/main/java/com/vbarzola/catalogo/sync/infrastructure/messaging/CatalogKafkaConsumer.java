@@ -1,4 +1,4 @@
-package com.vbarzola.catalogo.adapter.in.kafka;
+package com.vbarzola.catalogo.sync.infrastructure.messaging;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
