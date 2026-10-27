@@ -2,15 +2,15 @@ package com.vbarzola.catalogo.domain.service;
 
 import com.vbarzola.catalogo.domain.model.CatalogSnapshot;
 import com.vbarzola.catalogo.domain.model.CatalogSyncStatus;
-import com.vbarzola.catalogo.domain.model.Professional;
-import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.domain.port.in.SyncFullCatalogUseCase;
 import com.vbarzola.catalogo.domain.port.out.CatalogSyncStatusRepositoryPort;
 import com.vbarzola.catalogo.domain.port.out.CatedraSnapshotClient;
-import com.vbarzola.catalogo.domain.port.out.ProfessionalCategoryRepositoryPort;
-import com.vbarzola.catalogo.domain.port.out.ProfessionalRepositoryPort;
 import com.vbarzola.catalogo.domain.port.out.WeeklyScheduleRepositoryPort;
+import com.vbarzola.catalogo.professional.domain.model.Professional;
+import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
+import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalCategoryRepository;
+import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalRepository;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,15 +24,15 @@ public class SyncFullCatalogService implements SyncFullCatalogUseCase {
     private static final Logger LOG = LoggerFactory.getLogger(SyncFullCatalogService.class);
 
     private final CatedraSnapshotClient snapshotClient;
-    private final ProfessionalCategoryRepositoryPort categoryRepo;
-    private final ProfessionalRepositoryPort professionalRepo;
+    private final ProfessionalCategoryRepository categoryRepo;
+    private final ProfessionalRepository professionalRepo;
     private final WeeklyScheduleRepositoryPort scheduleRepo;
     private final CatalogSyncStatusRepositoryPort syncStatusRepo;
 
     public SyncFullCatalogService(
         CatedraSnapshotClient snapshotClient,
-        ProfessionalCategoryRepositoryPort categoryRepo,
-        ProfessionalRepositoryPort professionalRepo,
+        ProfessionalCategoryRepository categoryRepo,
+        ProfessionalRepository professionalRepo,
         WeeklyScheduleRepositoryPort scheduleRepo,
         CatalogSyncStatusRepositoryPort syncStatusRepo
     ) {

@@ -1,5 +1,7 @@
 package com.vbarzola.catalogo.domain.model;
 
+import com.vbarzola.catalogo.professional.domain.model.Professional;
+import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import java.util.List;
 
 public class CatalogSnapshot {

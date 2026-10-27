@@ -1,47 +1,34 @@
 package com.vbarzola.catalogo.web.rest;
 
-import static com.vbarzola.catalogo.domain.ProfessionalAsserts.*;
-import static com.vbarzola.catalogo.web.rest.TestUtil.createUpdateProxyForBean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vbarzola.catalogo.IntegrationTest;
-import com.vbarzola.catalogo.adapter.out.persistence.ProfessionalJpaRepository;
-import com.vbarzola.catalogo.domain.dto.ProfessionalDTO;
-import com.vbarzola.catalogo.domain.mapper.ProfessionalMapper;
-import com.vbarzola.catalogo.domain.model.Professional;
-import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
-import com.vbarzola.catalogo.domain.service.ProfessionalService;
-import jakarta.persistence.EntityManager;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalCategoryEntity;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalEntity;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.repository.JpaProfessionalCategoryRepository;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.repository.JpaProfessionalRepository;
+import com.vbarzola.catalogo.professional.infrastructure.web.dto.ProfessionalRequest;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Integration tests for the {@link ProfessionalResource} REST controller.
+ * Integration tests for the {@link com.vbarzola.catalogo.professional.infrastructure.web.controller.ProfessionalController}.
  */
 @IntegrationTest
-@ExtendWith(MockitoExtension.class)
 @AutoConfigureMockMvc
 @WithMockUser
 class ProfessionalResourceIT {
@@ -55,526 +42,216 @@ class ProfessionalResourceIT {
     private static final Boolean DEFAULT_ENABLED = false;
     private static final Boolean UPDATED_ENABLED = true;
 
-    private static final Instant DEFAULT_CREATED_AT = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_CREATED_AT = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final Instant DEFAULT_UPDATED_AT = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_UPDATED_AT = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
     private static final String ENTITY_API_URL = "/api/professionals";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
-    private static Random random = new Random();
-    private static AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
+    private static final Random random = new Random();
+    private static final AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
     @Autowired
     private ObjectMapper om;
 
     @Autowired
-    private ProfessionalJpaRepository professionalRepository;
-
-    @Mock
-    private ProfessionalJpaRepository professionalRepositoryMock;
+    private JpaProfessionalRepository professionalRepository;
 
     @Autowired
-    private ProfessionalMapper professionalMapper;
-
-    @Mock
-    private ProfessionalService professionalServiceMock;
-
-    @Autowired
-    private EntityManager em;
+    private JpaProfessionalCategoryRepository professionalCategoryRepository;
 
     @Autowired
     private MockMvc restProfessionalMockMvc;
 
-    private Professional professional;
+    private ProfessionalCategoryEntity category;
 
-    private Professional insertedProfessional;
+    private ProfessionalEntity insertedProfessional;
 
-    /**
-     * Create an entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
-     */
-    public static Professional createEntity(EntityManager em) {
-        Professional professional = new Professional()
+    private static ProfessionalCategoryEntity createCategoryEntity() {
+        return ProfessionalCategoryEntity.builder()
+            .id(longCount.incrementAndGet())
+            .name("Category")
+            .description("Description")
+            .enabled(true)
+            .createdAt(Instant.ofEpochMilli(0L))
+            .updatedAt(Instant.ofEpochMilli(0L))
+            .build();
+    }
+
+    private ProfessionalEntity createEntity() {
+        return ProfessionalEntity.builder()
+            .id(longCount.incrementAndGet())
             .firstName(DEFAULT_FIRST_NAME)
             .lastName(DEFAULT_LAST_NAME)
             .enabled(DEFAULT_ENABLED)
-            .createdAt(DEFAULT_CREATED_AT)
-            .updatedAt(DEFAULT_UPDATED_AT);
-        // Add required entity
-        ProfessionalCategory professionalCategory;
-        if (TestUtil.findAll(em, ProfessionalCategory.class).isEmpty()) {
-            professionalCategory = ProfessionalCategoryResourceIT.createEntity();
-            em.persist(professionalCategory);
-            em.flush();
-        } else {
-            professionalCategory = TestUtil.findAll(em, ProfessionalCategory.class).get(0);
-        }
-        professional.setCategory(professionalCategory);
-        return professional;
-    }
-
-    /**
-     * Create an updated entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
-     */
-    public static Professional createUpdatedEntity(EntityManager em) {
-        Professional updatedProfessional = new Professional()
-            .firstName(UPDATED_FIRST_NAME)
-            .lastName(UPDATED_LAST_NAME)
-            .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-        // Add required entity
-        ProfessionalCategory professionalCategory;
-        if (TestUtil.findAll(em, ProfessionalCategory.class).isEmpty()) {
-            professionalCategory = ProfessionalCategoryResourceIT.createUpdatedEntity();
-            em.persist(professionalCategory);
-            em.flush();
-        } else {
-            professionalCategory = TestUtil.findAll(em, ProfessionalCategory.class).get(0);
-        }
-        updatedProfessional.setCategory(professionalCategory);
-        return updatedProfessional;
+            .createdAt(Instant.ofEpochMilli(0L))
+            .updatedAt(Instant.ofEpochMilli(0L))
+            .category(category)
+            .build();
     }
 
     @BeforeEach
     void initTest() {
-        professional = createEntity(em);
+        category = professionalCategoryRepository.saveAndFlush(createCategoryEntity());
+        insertedProfessional = null;
     }
 
     @AfterEach
     void cleanup() {
         if (insertedProfessional != null) {
-            professionalRepository.delete(insertedProfessional);
+            professionalRepository.deleteById(insertedProfessional.getId());
             insertedProfessional = null;
         }
+        professionalCategoryRepository.deleteById(category.getId());
     }
 
     @Test
     @Transactional
     void createProfessional() throws Exception {
-        long databaseSizeBeforeCreate = getRepositoryCount();
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-        var returnedProfessionalDTO = om.readValue(
-            restProfessionalMockMvc
-                .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalDTO)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString(),
-            ProfessionalDTO.class
-        );
+        long databaseSizeBeforeCreate = professionalRepository.count();
 
-        // Validate the Professional in the database
-        assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
-        var returnedProfessional = professionalMapper.toEntity(returnedProfessionalDTO);
-        assertProfessionalUpdatableFieldsEquals(returnedProfessional, getPersistedProfessional(returnedProfessional));
+        ProfessionalRequest request = ProfessionalRequest.builder()
+            .firstName(DEFAULT_FIRST_NAME)
+            .lastName(DEFAULT_LAST_NAME)
+            .enabled(DEFAULT_ENABLED)
+            .categoryId(category.getId())
+            .build();
 
-        insertedProfessional = returnedProfessional;
-    }
+        var response = restProfessionalMockMvc
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
 
-    @Test
-    @Transactional
-    void createProfessionalWithExistingId() throws Exception {
-        // Create the Professional with an existing ID
-        professional.setId(1L);
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        long databaseSizeBeforeCreate = getRepositoryCount();
-
-        // An entity with an existing ID cannot be created, so this API call must fail
-        restProfessionalMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeCreate);
+        Long createdId = om.readTree(response).get("id").asLong();
+        assertThat(professionalRepository.count()).isEqualTo(databaseSizeBeforeCreate + 1);
+        insertedProfessional = professionalRepository.findById(createdId).orElseThrow();
+        assertThat(insertedProfessional.getFirstName()).isEqualTo(DEFAULT_FIRST_NAME);
+        assertThat(insertedProfessional.getLastName()).isEqualTo(DEFAULT_LAST_NAME);
+        assertThat(insertedProfessional.getCategory().getId()).isEqualTo(category.getId());
     }
 
     @Test
     @Transactional
     void checkFirstNameIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        professional.setFirstName(null);
-
-        // Create the Professional, which fails.
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        restProfessionalMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
-    void checkLastNameIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        professional.setLastName(null);
-
-        // Create the Professional, which fails.
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
+        long databaseSizeBeforeTest = professionalRepository.count();
+        ProfessionalRequest request = ProfessionalRequest.builder()
+            .lastName(DEFAULT_LAST_NAME)
+            .enabled(DEFAULT_ENABLED)
+            .categoryId(category.getId())
+            .build();
 
         restProfessionalMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalDTO)))
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
-    void checkEnabledIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        professional.setEnabled(null);
-
-        // Create the Professional, which fails.
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        restProfessionalMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(professionalRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void getAllProfessionals() throws Exception {
-        // Initialize the database
-        insertedProfessional = professionalRepository.saveAndFlush(professional);
+        insertedProfessional = professionalRepository.saveAndFlush(createEntity());
 
-        // Get all the professionalList
         restProfessionalMockMvc
-            .perform(get(ENTITY_API_URL + "?sort=id,desc"))
+            .perform(get(ENTITY_API_URL + "?eagerload=false"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(professional.getId().intValue())))
-            .andExpect(jsonPath("$.[*].firstName").value(hasItem(DEFAULT_FIRST_NAME)))
-            .andExpect(jsonPath("$.[*].lastName").value(hasItem(DEFAULT_LAST_NAME)))
-            .andExpect(jsonPath("$.[*].enabled").value(hasItem(DEFAULT_ENABLED)))
-            .andExpect(jsonPath("$.[*].createdAt").value(hasItem(DEFAULT_CREATED_AT.toString())))
-            .andExpect(jsonPath("$.[*].updatedAt").value(hasItem(DEFAULT_UPDATED_AT.toString())));
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    void getAllProfessionalsWithEagerRelationshipsIsEnabled() throws Exception {
-        when(professionalServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
-
-        restProfessionalMockMvc.perform(get(ENTITY_API_URL + "?eagerload=true")).andExpect(status().isOk());
-
-        verify(professionalServiceMock, times(1)).findAllWithEagerRelationships(any());
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    void getAllProfessionalsWithEagerRelationshipsIsNotEnabled() throws Exception {
-        when(professionalServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
-
-        restProfessionalMockMvc.perform(get(ENTITY_API_URL + "?eagerload=false")).andExpect(status().isOk());
-        verify(professionalRepositoryMock, times(1)).findAll(any(Pageable.class));
+            .andExpect(jsonPath("$.[*].id").value(hasItem(insertedProfessional.getId().intValue())));
     }
 
     @Test
     @Transactional
     void getProfessional() throws Exception {
-        // Initialize the database
-        insertedProfessional = professionalRepository.saveAndFlush(professional);
+        insertedProfessional = professionalRepository.saveAndFlush(createEntity());
 
-        // Get the professional
         restProfessionalMockMvc
-            .perform(get(ENTITY_API_URL_ID, professional.getId()))
+            .perform(get(ENTITY_API_URL_ID, insertedProfessional.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.id").value(professional.getId().intValue()))
+            .andExpect(jsonPath("$.id").value(insertedProfessional.getId().intValue()))
             .andExpect(jsonPath("$.firstName").value(DEFAULT_FIRST_NAME))
             .andExpect(jsonPath("$.lastName").value(DEFAULT_LAST_NAME))
-            .andExpect(jsonPath("$.enabled").value(DEFAULT_ENABLED))
-            .andExpect(jsonPath("$.createdAt").value(DEFAULT_CREATED_AT.toString()))
-            .andExpect(jsonPath("$.updatedAt").value(DEFAULT_UPDATED_AT.toString()));
+            .andExpect(jsonPath("$.category.id").value(category.getId().intValue()));
     }
 
     @Test
     @Transactional
     void getNonExistingProfessional() throws Exception {
-        // Get the professional
         restProfessionalMockMvc.perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE)).andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void putExistingProfessional() throws Exception {
-        // Initialize the database
-        insertedProfessional = professionalRepository.saveAndFlush(professional);
+        insertedProfessional = professionalRepository.saveAndFlush(createEntity());
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the professional
-        Professional updatedProfessional = professionalRepository.findById(professional.getId()).orElseThrow();
-        // Disconnect from session so that the updates on updatedProfessional are not directly saved in db
-        em.detach(updatedProfessional);
-        updatedProfessional
+        ProfessionalRequest request = ProfessionalRequest.builder()
             .firstName(UPDATED_FIRST_NAME)
             .lastName(UPDATED_LAST_NAME)
             .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(updatedProfessional);
+            .categoryId(category.getId())
+            .build();
 
         restProfessionalMockMvc
             .perform(
-                put(ENTITY_API_URL_ID, professionalDTO.getId())
+                put(ENTITY_API_URL_ID, insertedProfessional.getId())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(professionalDTO))
+                    .content(om.writeValueAsBytes(request))
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.firstName").value(UPDATED_FIRST_NAME));
 
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedProfessionalToMatchAllProperties(updatedProfessional);
+        ProfessionalEntity updated = professionalRepository.findById(insertedProfessional.getId()).orElseThrow();
+        assertThat(updated.getFirstName()).isEqualTo(UPDATED_FIRST_NAME);
+        assertThat(updated.getLastName()).isEqualTo(UPDATED_LAST_NAME);
     }
 
     @Test
     @Transactional
     void putNonExistingProfessional() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professional.setId(longCount.incrementAndGet());
+        ProfessionalRequest request = ProfessionalRequest.builder()
+            .firstName(DEFAULT_FIRST_NAME)
+            .lastName(DEFAULT_LAST_NAME)
+            .enabled(DEFAULT_ENABLED)
+            .categoryId(category.getId())
+            .build();
 
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restProfessionalMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, professionalDTO.getId())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(professionalDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void putWithIdMismatchProfessional() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professional.setId(longCount.incrementAndGet());
-
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(professionalDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void putWithMissingIdPathParamProfessional() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professional.setId(longCount.incrementAndGet());
-
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalMockMvc
-            .perform(put(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalDTO)))
-            .andExpect(status().isMethodNotAllowed());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+            .perform(put(ENTITY_API_URL_ID, Long.MAX_VALUE).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void partialUpdateProfessionalWithPatch() throws Exception {
-        // Initialize the database
-        insertedProfessional = professionalRepository.saveAndFlush(professional);
+        insertedProfessional = professionalRepository.saveAndFlush(createEntity());
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the professional using partial update
-        Professional partialUpdatedProfessional = new Professional();
-        partialUpdatedProfessional.setId(professional.getId());
-
-        partialUpdatedProfessional.firstName(UPDATED_FIRST_NAME).lastName(UPDATED_LAST_NAME).createdAt(UPDATED_CREATED_AT);
+        ProfessionalRequest request = ProfessionalRequest.builder().firstName(UPDATED_FIRST_NAME).build();
 
         restProfessionalMockMvc
             .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedProfessional.getId())
+                patch(ENTITY_API_URL_ID, insertedProfessional.getId())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedProfessional))
+                    .content(om.writeValueAsBytes(request))
             )
             .andExpect(status().isOk());
 
-        // Validate the Professional in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertProfessionalUpdatableFieldsEquals(
-            createUpdateProxyForBean(partialUpdatedProfessional, professional),
-            getPersistedProfessional(professional)
-        );
-    }
-
-    @Test
-    @Transactional
-    void fullUpdateProfessionalWithPatch() throws Exception {
-        // Initialize the database
-        insertedProfessional = professionalRepository.saveAndFlush(professional);
-
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the professional using partial update
-        Professional partialUpdatedProfessional = new Professional();
-        partialUpdatedProfessional.setId(professional.getId());
-
-        partialUpdatedProfessional
-            .firstName(UPDATED_FIRST_NAME)
-            .lastName(UPDATED_LAST_NAME)
-            .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-
-        restProfessionalMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedProfessional.getId())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedProfessional))
-            )
-            .andExpect(status().isOk());
-
-        // Validate the Professional in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertProfessionalUpdatableFieldsEquals(partialUpdatedProfessional, getPersistedProfessional(partialUpdatedProfessional));
-    }
-
-    @Test
-    @Transactional
-    void patchNonExistingProfessional() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professional.setId(longCount.incrementAndGet());
-
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restProfessionalMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, professionalDTO.getId())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(professionalDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void patchWithIdMismatchProfessional() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professional.setId(longCount.incrementAndGet());
-
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(professionalDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void patchWithMissingIdPathParamProfessional() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professional.setId(longCount.incrementAndGet());
-
-        // Create the Professional
-        ProfessionalDTO professionalDTO = professionalMapper.toDto(professional);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalMockMvc
-            .perform(patch(ENTITY_API_URL).contentType("application/merge-patch+json").content(om.writeValueAsBytes(professionalDTO)))
-            .andExpect(status().isMethodNotAllowed());
-
-        // Validate the Professional in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        ProfessionalEntity updated = professionalRepository.findById(insertedProfessional.getId()).orElseThrow();
+        assertThat(updated.getFirstName()).isEqualTo(UPDATED_FIRST_NAME);
+        assertThat(updated.getLastName()).isEqualTo(DEFAULT_LAST_NAME);
+        assertThat(updated.getCategory().getId()).isEqualTo(category.getId());
     }
 
     @Test
     @Transactional
     void deleteProfessional() throws Exception {
-        // Initialize the database
-        insertedProfessional = professionalRepository.saveAndFlush(professional);
+        insertedProfessional = professionalRepository.saveAndFlush(createEntity());
+        long databaseSizeBeforeDelete = professionalRepository.count();
 
-        long databaseSizeBeforeDelete = getRepositoryCount();
-
-        // Delete the professional
         restProfessionalMockMvc
-            .perform(delete(ENTITY_API_URL_ID, professional.getId()).accept(MediaType.APPLICATION_JSON))
+            .perform(delete(ENTITY_API_URL_ID, insertedProfessional.getId()).accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
-        // Validate the database contains one less item
-        assertDecrementedRepositoryCount(databaseSizeBeforeDelete);
-    }
-
-    protected long getRepositoryCount() {
-        return professionalRepository.count();
-    }
-
-    protected void assertIncrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore + 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertDecrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore - 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertSameRepositoryCount(long countBefore) {
-        assertThat(countBefore).isEqualTo(getRepositoryCount());
-    }
-
-    protected Professional getPersistedProfessional(Professional professional) {
-        return professionalRepository.findById(professional.getId()).orElseThrow();
-    }
-
-    protected void assertPersistedProfessionalToMatchAllProperties(Professional expectedProfessional) {
-        assertProfessionalAllPropertiesEquals(expectedProfessional, getPersistedProfessional(expectedProfessional));
-    }
-
-    protected void assertPersistedProfessionalToMatchUpdatableProperties(Professional expectedProfessional) {
-        assertProfessionalAllUpdatablePropertiesEquals(expectedProfessional, getPersistedProfessional(expectedProfessional));
+        assertThat(professionalRepository.count()).isEqualTo(databaseSizeBeforeDelete - 1);
+        insertedProfessional = null;
     }
 }

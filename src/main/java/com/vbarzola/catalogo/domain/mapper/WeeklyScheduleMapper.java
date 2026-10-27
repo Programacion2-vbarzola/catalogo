@@ -1,9 +1,9 @@
 package com.vbarzola.catalogo.domain.mapper;
 
-import com.vbarzola.catalogo.domain.dto.ProfessionalDTO;
 import com.vbarzola.catalogo.domain.dto.WeeklyScheduleDTO;
-import com.vbarzola.catalogo.domain.model.Professional;
 import com.vbarzola.catalogo.domain.model.WeeklySchedule;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalEntity;
+import com.vbarzola.catalogo.professional.infrastructure.web.dto.ProfessionalResponse;
 import org.mapstruct.*;
 
 /**
@@ -18,5 +18,5 @@ public interface WeeklyScheduleMapper extends EntityMapper<WeeklyScheduleDTO, We
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
     @Mapping(target = "lastName", source = "lastName")
-    ProfessionalDTO toDtoProfessionalLastName(Professional professional);
+    ProfessionalResponse toDtoProfessionalLastName(ProfessionalEntity professional);
 }

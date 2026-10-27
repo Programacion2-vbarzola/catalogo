@@ -2,8 +2,6 @@ package com.vbarzola.catalogo.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.vbarzola.catalogo.domain.model.Professional;
-import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.domain.model.WeeklySchedule;
 
 public class WeeklyScheduleAsserts {

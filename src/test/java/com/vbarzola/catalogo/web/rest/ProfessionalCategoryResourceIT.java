@@ -1,7 +1,5 @@
 package com.vbarzola.catalogo.web.rest;
 
-import static com.vbarzola.catalogo.domain.ProfessionalCategoryAsserts.*;
-import static com.vbarzola.catalogo.web.rest.TestUtil.createUpdateProxyForBean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -9,11 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vbarzola.catalogo.IntegrationTest;
-import com.vbarzola.catalogo.adapter.out.persistence.ProfessionalCategoryJpaRepository;
-import com.vbarzola.catalogo.domain.dto.ProfessionalCategoryDTO;
-import com.vbarzola.catalogo.domain.mapper.ProfessionalCategoryMapper;
-import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
-import jakarta.persistence.EntityManager;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalCategoryEntity;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.repository.JpaProfessionalCategoryRepository;
+import com.vbarzola.catalogo.professional.infrastructure.web.dto.ProfessionalCategoryRequest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Random;
@@ -29,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Integration tests for the {@link ProfessionalCategoryResource} REST controller.
+ * Integration tests for the {@link com.vbarzola.catalogo.professional.infrastructure.web.controller.ProfessionalCategoryController}.
  */
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -45,76 +41,47 @@ class ProfessionalCategoryResourceIT {
     private static final Boolean DEFAULT_ENABLED = false;
     private static final Boolean UPDATED_ENABLED = true;
 
-    private static final Instant DEFAULT_CREATED_AT = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_CREATED_AT = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final Instant DEFAULT_UPDATED_AT = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_UPDATED_AT = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
     private static final String ENTITY_API_URL = "/api/professional-categories";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
-    private static Random random = new Random();
-    private static AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
+    private static final Random random = new Random();
+    private static final AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
     @Autowired
     private ObjectMapper om;
 
     @Autowired
-    private ProfessionalCategoryJpaRepository professionalCategoryRepository;
-
-    @Autowired
-    private ProfessionalCategoryMapper professionalCategoryMapper;
-
-    @Autowired
-    private EntityManager em;
+    private JpaProfessionalCategoryRepository professionalCategoryRepository;
 
     @Autowired
     private MockMvc restProfessionalCategoryMockMvc;
 
-    private ProfessionalCategory professionalCategory;
+    private ProfessionalCategoryEntity insertedProfessionalCategory;
 
-    private ProfessionalCategory insertedProfessionalCategory;
+    public static ProfessionalCategoryRequest createRequest() {
+        return ProfessionalCategoryRequest.builder().name(DEFAULT_NAME).description(DEFAULT_DESCRIPTION).enabled(DEFAULT_ENABLED).build();
+    }
 
-    /**
-     * Create an entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
-     */
-    public static ProfessionalCategory createEntity() {
-        return new ProfessionalCategory()
+    public static ProfessionalCategoryEntity createEntity() {
+        return ProfessionalCategoryEntity.builder()
+            .id(longCount.incrementAndGet())
             .name(DEFAULT_NAME)
             .description(DEFAULT_DESCRIPTION)
             .enabled(DEFAULT_ENABLED)
-            .createdAt(DEFAULT_CREATED_AT)
-            .updatedAt(DEFAULT_UPDATED_AT);
-    }
-
-    /**
-     * Create an updated entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
-     */
-    public static ProfessionalCategory createUpdatedEntity() {
-        return new ProfessionalCategory()
-            .name(UPDATED_NAME)
-            .description(UPDATED_DESCRIPTION)
-            .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
+            .createdAt(Instant.ofEpochMilli(0L))
+            .updatedAt(Instant.ofEpochMilli(0L))
+            .build();
     }
 
     @BeforeEach
     void initTest() {
-        professionalCategory = createEntity();
+        insertedProfessionalCategory = null;
     }
 
     @AfterEach
     void cleanup() {
         if (insertedProfessionalCategory != null) {
-            professionalCategoryRepository.delete(insertedProfessionalCategory);
+            professionalCategoryRepository.deleteById(insertedProfessionalCategory.getId());
             insertedProfessionalCategory = null;
         }
     }
@@ -122,409 +89,144 @@ class ProfessionalCategoryResourceIT {
     @Test
     @Transactional
     void createProfessionalCategory() throws Exception {
-        long databaseSizeBeforeCreate = getRepositoryCount();
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-        var returnedProfessionalCategoryDTO = om.readValue(
-            restProfessionalCategoryMockMvc
-                .perform(
-                    post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalCategoryDTO))
-                )
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString(),
-            ProfessionalCategoryDTO.class
-        );
+        long databaseSizeBeforeCreate = professionalCategoryRepository.count();
 
-        // Validate the ProfessionalCategory in the database
-        assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
-        var returnedProfessionalCategory = professionalCategoryMapper.toEntity(returnedProfessionalCategoryDTO);
-        assertProfessionalCategoryUpdatableFieldsEquals(
-            returnedProfessionalCategory,
-            getPersistedProfessionalCategory(returnedProfessionalCategory)
-        );
+        ProfessionalCategoryRequest request = createRequest();
+        var response = restProfessionalCategoryMockMvc
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
 
-        insertedProfessionalCategory = returnedProfessionalCategory;
-    }
-
-    @Test
-    @Transactional
-    void createProfessionalCategoryWithExistingId() throws Exception {
-        // Create the ProfessionalCategory with an existing ID
-        professionalCategory.setId(1L);
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        long databaseSizeBeforeCreate = getRepositoryCount();
-
-        // An entity with an existing ID cannot be created, so this API call must fail
-        restProfessionalCategoryMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalCategoryDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeCreate);
+        Long createdId = om.readTree(response).get("id").asLong();
+        assertThat(professionalCategoryRepository.count()).isEqualTo(databaseSizeBeforeCreate + 1);
+        insertedProfessionalCategory = professionalCategoryRepository.findById(createdId).orElseThrow();
+        assertThat(insertedProfessionalCategory.getName()).isEqualTo(DEFAULT_NAME);
+        assertThat(insertedProfessionalCategory.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        assertThat(insertedProfessionalCategory.getEnabled()).isEqualTo(DEFAULT_ENABLED);
     }
 
     @Test
     @Transactional
     void checkNameIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        professionalCategory.setName(null);
-
-        // Create the ProfessionalCategory, which fails.
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        restProfessionalCategoryMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalCategoryDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
-    void checkEnabledIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        professionalCategory.setEnabled(null);
-
-        // Create the ProfessionalCategory, which fails.
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
+        long databaseSizeBeforeTest = professionalCategoryRepository.count();
+        ProfessionalCategoryRequest request = ProfessionalCategoryRequest.builder()
+            .description(DEFAULT_DESCRIPTION)
+            .enabled(DEFAULT_ENABLED)
+            .build();
 
         restProfessionalCategoryMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalCategoryDTO)))
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(professionalCategoryRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void getAllProfessionalCategories() throws Exception {
-        // Initialize the database
-        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(professionalCategory);
+        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(createEntity());
 
-        // Get all the professionalCategoryList
         restProfessionalCategoryMockMvc
-            .perform(get(ENTITY_API_URL + "?sort=id,desc"))
+            .perform(get(ENTITY_API_URL))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(professionalCategory.getId().intValue())))
-            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
-            .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
-            .andExpect(jsonPath("$.[*].enabled").value(hasItem(DEFAULT_ENABLED)))
-            .andExpect(jsonPath("$.[*].createdAt").value(hasItem(DEFAULT_CREATED_AT.toString())))
-            .andExpect(jsonPath("$.[*].updatedAt").value(hasItem(DEFAULT_UPDATED_AT.toString())));
+            .andExpect(jsonPath("$.[*].id").value(hasItem(insertedProfessionalCategory.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)));
     }
 
     @Test
     @Transactional
     void getProfessionalCategory() throws Exception {
-        // Initialize the database
-        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(professionalCategory);
+        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(createEntity());
 
-        // Get the professionalCategory
         restProfessionalCategoryMockMvc
-            .perform(get(ENTITY_API_URL_ID, professionalCategory.getId()))
+            .perform(get(ENTITY_API_URL_ID, insertedProfessionalCategory.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.id").value(professionalCategory.getId().intValue()))
+            .andExpect(jsonPath("$.id").value(insertedProfessionalCategory.getId().intValue()))
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
             .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
-            .andExpect(jsonPath("$.enabled").value(DEFAULT_ENABLED))
-            .andExpect(jsonPath("$.createdAt").value(DEFAULT_CREATED_AT.toString()))
-            .andExpect(jsonPath("$.updatedAt").value(DEFAULT_UPDATED_AT.toString()));
+            .andExpect(jsonPath("$.enabled").value(DEFAULT_ENABLED));
     }
 
     @Test
     @Transactional
     void getNonExistingProfessionalCategory() throws Exception {
-        // Get the professionalCategory
         restProfessionalCategoryMockMvc.perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE)).andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void putExistingProfessionalCategory() throws Exception {
-        // Initialize the database
-        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(professionalCategory);
+        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(createEntity());
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the professionalCategory
-        ProfessionalCategory updatedProfessionalCategory = professionalCategoryRepository
-            .findById(professionalCategory.getId())
-            .orElseThrow();
-        // Disconnect from session so that the updates on updatedProfessionalCategory are not directly saved in db
-        em.detach(updatedProfessionalCategory);
-        updatedProfessionalCategory
+        ProfessionalCategoryRequest request = ProfessionalCategoryRequest.builder()
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
             .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(updatedProfessionalCategory);
+            .build();
 
         restProfessionalCategoryMockMvc
             .perform(
-                put(ENTITY_API_URL_ID, professionalCategoryDTO.getId())
+                put(ENTITY_API_URL_ID, insertedProfessionalCategory.getId())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(professionalCategoryDTO))
+                    .content(om.writeValueAsBytes(request))
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value(UPDATED_NAME));
 
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedProfessionalCategoryToMatchAllProperties(updatedProfessionalCategory);
+        ProfessionalCategoryEntity updated = professionalCategoryRepository.findById(insertedProfessionalCategory.getId()).orElseThrow();
+        assertThat(updated.getName()).isEqualTo(UPDATED_NAME);
+        assertThat(updated.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
     }
 
     @Test
     @Transactional
     void putNonExistingProfessionalCategory() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professionalCategory.setId(longCount.incrementAndGet());
+        ProfessionalCategoryRequest request = createRequest();
 
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restProfessionalCategoryMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, professionalCategoryDTO.getId())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(professionalCategoryDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void putWithIdMismatchProfessionalCategory() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professionalCategory.setId(longCount.incrementAndGet());
-
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalCategoryMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(professionalCategoryDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void putWithMissingIdPathParamProfessionalCategory() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professionalCategory.setId(longCount.incrementAndGet());
-
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalCategoryMockMvc
-            .perform(put(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(professionalCategoryDTO)))
-            .andExpect(status().isMethodNotAllowed());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+            .perform(put(ENTITY_API_URL_ID, Long.MAX_VALUE).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void partialUpdateProfessionalCategoryWithPatch() throws Exception {
-        // Initialize the database
-        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(professionalCategory);
+        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(createEntity());
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the professionalCategory using partial update
-        ProfessionalCategory partialUpdatedProfessionalCategory = new ProfessionalCategory();
-        partialUpdatedProfessionalCategory.setId(professionalCategory.getId());
-
-        partialUpdatedProfessionalCategory
+        ProfessionalCategoryRequest request = ProfessionalCategoryRequest.builder()
             .description(UPDATED_DESCRIPTION)
             .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
+            .build();
 
         restProfessionalCategoryMockMvc
             .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedProfessionalCategory.getId())
+                patch(ENTITY_API_URL_ID, insertedProfessionalCategory.getId())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedProfessionalCategory))
+                    .content(om.writeValueAsBytes(request))
             )
             .andExpect(status().isOk());
 
-        // Validate the ProfessionalCategory in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertProfessionalCategoryUpdatableFieldsEquals(
-            createUpdateProxyForBean(partialUpdatedProfessionalCategory, professionalCategory),
-            getPersistedProfessionalCategory(professionalCategory)
-        );
-    }
-
-    @Test
-    @Transactional
-    void fullUpdateProfessionalCategoryWithPatch() throws Exception {
-        // Initialize the database
-        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(professionalCategory);
-
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the professionalCategory using partial update
-        ProfessionalCategory partialUpdatedProfessionalCategory = new ProfessionalCategory();
-        partialUpdatedProfessionalCategory.setId(professionalCategory.getId());
-
-        partialUpdatedProfessionalCategory
-            .name(UPDATED_NAME)
-            .description(UPDATED_DESCRIPTION)
-            .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-
-        restProfessionalCategoryMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedProfessionalCategory.getId())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedProfessionalCategory))
-            )
-            .andExpect(status().isOk());
-
-        // Validate the ProfessionalCategory in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertProfessionalCategoryUpdatableFieldsEquals(
-            partialUpdatedProfessionalCategory,
-            getPersistedProfessionalCategory(partialUpdatedProfessionalCategory)
-        );
-    }
-
-    @Test
-    @Transactional
-    void patchNonExistingProfessionalCategory() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professionalCategory.setId(longCount.incrementAndGet());
-
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restProfessionalCategoryMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, professionalCategoryDTO.getId())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(professionalCategoryDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void patchWithIdMismatchProfessionalCategory() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professionalCategory.setId(longCount.incrementAndGet());
-
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalCategoryMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(professionalCategoryDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void patchWithMissingIdPathParamProfessionalCategory() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        professionalCategory.setId(longCount.incrementAndGet());
-
-        // Create the ProfessionalCategory
-        ProfessionalCategoryDTO professionalCategoryDTO = professionalCategoryMapper.toDto(professionalCategory);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restProfessionalCategoryMockMvc
-            .perform(
-                patch(ENTITY_API_URL).contentType("application/merge-patch+json").content(om.writeValueAsBytes(professionalCategoryDTO))
-            )
-            .andExpect(status().isMethodNotAllowed());
-
-        // Validate the ProfessionalCategory in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        ProfessionalCategoryEntity updated = professionalCategoryRepository.findById(insertedProfessionalCategory.getId()).orElseThrow();
+        assertThat(updated.getName()).isEqualTo(DEFAULT_NAME);
+        assertThat(updated.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
+        assertThat(updated.getEnabled()).isEqualTo(UPDATED_ENABLED);
     }
 
     @Test
     @Transactional
     void deleteProfessionalCategory() throws Exception {
-        // Initialize the database
-        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(professionalCategory);
+        insertedProfessionalCategory = professionalCategoryRepository.saveAndFlush(createEntity());
+        long databaseSizeBeforeDelete = professionalCategoryRepository.count();
 
-        long databaseSizeBeforeDelete = getRepositoryCount();
-
-        // Delete the professionalCategory
         restProfessionalCategoryMockMvc
-            .perform(delete(ENTITY_API_URL_ID, professionalCategory.getId()).accept(MediaType.APPLICATION_JSON))
+            .perform(delete(ENTITY_API_URL_ID, insertedProfessionalCategory.getId()).accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
-        // Validate the database contains one less item
-        assertDecrementedRepositoryCount(databaseSizeBeforeDelete);
-    }
-
-    protected long getRepositoryCount() {
-        return professionalCategoryRepository.count();
-    }
-
-    protected void assertIncrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore + 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertDecrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore - 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertSameRepositoryCount(long countBefore) {
-        assertThat(countBefore).isEqualTo(getRepositoryCount());
-    }
-
-    protected ProfessionalCategory getPersistedProfessionalCategory(ProfessionalCategory professionalCategory) {
-        return professionalCategoryRepository.findById(professionalCategory.getId()).orElseThrow();
-    }
-
-    protected void assertPersistedProfessionalCategoryToMatchAllProperties(ProfessionalCategory expectedProfessionalCategory) {
-        assertProfessionalCategoryAllPropertiesEquals(
-            expectedProfessionalCategory,
-            getPersistedProfessionalCategory(expectedProfessionalCategory)
-        );
-    }
-
-    protected void assertPersistedProfessionalCategoryToMatchUpdatableProperties(ProfessionalCategory expectedProfessionalCategory) {
-        assertProfessionalCategoryAllUpdatablePropertiesEquals(
-            expectedProfessionalCategory,
-            getPersistedProfessionalCategory(expectedProfessionalCategory)
-        );
+        assertThat(professionalCategoryRepository.count()).isEqualTo(databaseSizeBeforeDelete - 1);
+        insertedProfessionalCategory = null;
     }
 }

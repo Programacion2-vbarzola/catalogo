@@ -13,10 +13,11 @@ import com.vbarzola.catalogo.IntegrationTest;
 import com.vbarzola.catalogo.adapter.out.persistence.WeeklyScheduleJpaRepository;
 import com.vbarzola.catalogo.domain.dto.WeeklyScheduleDTO;
 import com.vbarzola.catalogo.domain.mapper.WeeklyScheduleMapper;
-import com.vbarzola.catalogo.domain.model.Professional;
 import com.vbarzola.catalogo.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.domain.model.enumeration.CatalogDayOfWeek;
 import com.vbarzola.catalogo.domain.service.WeeklyScheduleService;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalCategoryEntity;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalEntity;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -115,16 +116,34 @@ class WeeklyScheduleResourceIT {
             .createdAt(DEFAULT_CREATED_AT)
             .updatedAt(DEFAULT_UPDATED_AT);
         // Add required entity
-        Professional professional;
-        if (TestUtil.findAll(em, Professional.class).isEmpty()) {
-            professional = ProfessionalResourceIT.createEntity(em);
-            em.persist(professional);
-            em.flush();
+        ProfessionalEntity professional;
+        if (TestUtil.findAll(em, ProfessionalEntity.class).isEmpty()) {
+            professional = createRequiredProfessional(em);
         } else {
-            professional = TestUtil.findAll(em, Professional.class).get(0);
+            professional = TestUtil.findAll(em, ProfessionalEntity.class).get(0);
         }
         weeklySchedule.setProfessional(professional);
         return weeklySchedule;
+    }
+
+    private static ProfessionalEntity createRequiredProfessional(EntityManager em) {
+        ProfessionalCategoryEntity category;
+        if (TestUtil.findAll(em, ProfessionalCategoryEntity.class).isEmpty()) {
+            category = ProfessionalCategoryEntity.builder().name("Category").description("Description").enabled(true).build();
+            em.persist(category);
+            em.flush();
+        } else {
+            category = TestUtil.findAll(em, ProfessionalCategoryEntity.class).get(0);
+        }
+        ProfessionalEntity professional = ProfessionalEntity.builder()
+            .firstName("FirstName")
+            .lastName("LastName")
+            .enabled(true)
+            .category(category)
+            .build();
+        em.persist(professional);
+        em.flush();
+        return professional;
     }
 
     /**
@@ -143,13 +162,11 @@ class WeeklyScheduleResourceIT {
             .createdAt(UPDATED_CREATED_AT)
             .updatedAt(UPDATED_UPDATED_AT);
         // Add required entity
-        Professional professional;
-        if (TestUtil.findAll(em, Professional.class).isEmpty()) {
-            professional = ProfessionalResourceIT.createUpdatedEntity(em);
-            em.persist(professional);
-            em.flush();
+        ProfessionalEntity professional;
+        if (TestUtil.findAll(em, ProfessionalEntity.class).isEmpty()) {
+            professional = createRequiredProfessional(em);
         } else {
-            professional = TestUtil.findAll(em, Professional.class).get(0);
+            professional = TestUtil.findAll(em, ProfessionalEntity.class).get(0);
         }
         updatedWeeklySchedule.setProfessional(professional);
         return updatedWeeklySchedule;

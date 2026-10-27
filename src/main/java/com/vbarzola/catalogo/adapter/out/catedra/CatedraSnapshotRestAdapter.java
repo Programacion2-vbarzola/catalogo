@@ -3,11 +3,12 @@ package com.vbarzola.catalogo.adapter.out.catedra;
 import com.vbarzola.catalogo.adapter.out.catedra.dto.CatedraSnapshotResponse;
 import com.vbarzola.catalogo.config.ApplicationProperties;
 import com.vbarzola.catalogo.domain.model.CatalogSnapshot;
-import com.vbarzola.catalogo.domain.model.Professional;
-import com.vbarzola.catalogo.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.domain.model.enumeration.CatalogDayOfWeek;
 import com.vbarzola.catalogo.domain.port.out.CatedraSnapshotClient;
+import com.vbarzola.catalogo.professional.domain.model.Professional;
+import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,7 @@ public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
             }
             WeeklySchedule schedule = new WeeklySchedule();
             schedule.setId(dto.getId());
-            schedule.setProfessional(professional);
+            schedule.setProfessional(ProfessionalEntity.builder().id(professional.getId()).build());
             schedule.setDayOfWeek(CatalogDayOfWeek.valueOf(dto.getDayOfWeek()));
             schedule.setStartTime(dto.getStartTime());
             schedule.setEndTime(dto.getEndTime());

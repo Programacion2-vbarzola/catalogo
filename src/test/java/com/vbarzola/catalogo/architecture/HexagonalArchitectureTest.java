@@ -36,4 +36,31 @@ public class HexagonalArchitectureTest {
         .dependOnClassesThat()
         .resideInAPackage("com.vbarzola.catalogo.adapter.out..")
         .as("Input adapters must not depend on output adapters");
+
+    @ArchTest
+    static final ArchRule professional_domain_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.professional.domain..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.professional.infrastructure..")
+        .as("professional domain layer must not depend on professional infrastructure");
+
+    @ArchTest
+    static final ArchRule professional_application_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.professional.application..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.professional.infrastructure..")
+        .as("professional application layer must not depend on professional infrastructure");
+
+    @ArchTest
+    static final ArchRule professional_web_must_not_depend_on_persistence = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.professional.infrastructure.web..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.professional.infrastructure.persistence..")
+        .as("professional web adapters must not depend on professional persistence adapters");
 }

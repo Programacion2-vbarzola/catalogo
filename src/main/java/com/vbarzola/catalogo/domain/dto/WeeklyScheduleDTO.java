@@ -1,6 +1,7 @@
 package com.vbarzola.catalogo.domain.dto;
 
 import com.vbarzola.catalogo.domain.model.enumeration.CatalogDayOfWeek;
+import com.vbarzola.catalogo.professional.infrastructure.web.dto.ProfessionalResponse;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.Instant;
@@ -37,7 +38,7 @@ public class WeeklyScheduleDTO implements Serializable {
     private Instant updatedAt;
 
     @NotNull
-    private ProfessionalDTO professional;
+    private ProfessionalResponse professional;
 
     public Long getId() {
         return id;
@@ -103,11 +104,11 @@ public class WeeklyScheduleDTO implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public ProfessionalDTO getProfessional() {
+    public ProfessionalResponse getProfessional() {
         return professional;
     }
 
-    public void setProfessional(ProfessionalDTO professional) {
+    public void setProfessional(ProfessionalResponse professional) {
         this.professional = professional;
     }
 

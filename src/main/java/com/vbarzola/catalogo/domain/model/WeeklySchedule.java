@@ -2,6 +2,7 @@ package com.vbarzola.catalogo.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.vbarzola.catalogo.domain.model.enumeration.CatalogDayOfWeek;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
@@ -57,7 +58,7 @@ public class WeeklySchedule implements Serializable {
     @ManyToOne(optional = false)
     @NotNull
     @JsonIgnoreProperties(value = { "category" }, allowSetters = true)
-    private Professional professional;
+    private ProfessionalEntity professional;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -165,15 +166,15 @@ public class WeeklySchedule implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public Professional getProfessional() {
+    public ProfessionalEntity getProfessional() {
         return this.professional;
     }
 
-    public void setProfessional(Professional professional) {
+    public void setProfessional(ProfessionalEntity professional) {
         this.professional = professional;
     }
 
-    public WeeklySchedule professional(Professional professional) {
+    public WeeklySchedule professional(ProfessionalEntity professional) {
         this.setProfessional(professional);
         return this;
     }
