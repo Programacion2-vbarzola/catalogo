@@ -1,49 +1,37 @@
 package com.vbarzola.catalogo.web.rest;
 
-import static com.vbarzola.catalogo.domain.WeeklyScheduleAsserts.*;
-import static com.vbarzola.catalogo.web.rest.TestUtil.createUpdateProxyForBean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vbarzola.catalogo.IntegrationTest;
-import com.vbarzola.catalogo.adapter.out.persistence.WeeklyScheduleJpaRepository;
-import com.vbarzola.catalogo.domain.dto.WeeklyScheduleDTO;
-import com.vbarzola.catalogo.domain.mapper.WeeklyScheduleMapper;
-import com.vbarzola.catalogo.domain.model.WeeklySchedule;
-import com.vbarzola.catalogo.domain.model.enumeration.CatalogDayOfWeek;
-import com.vbarzola.catalogo.domain.service.WeeklyScheduleService;
 import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalCategoryEntity;
 import com.vbarzola.catalogo.professional.infrastructure.persistence.entity.ProfessionalEntity;
-import jakarta.persistence.EntityManager;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.repository.JpaProfessionalCategoryRepository;
+import com.vbarzola.catalogo.professional.infrastructure.persistence.repository.JpaProfessionalRepository;
+import com.vbarzola.catalogo.schedule.domain.model.enumeration.CatalogDayOfWeek;
+import com.vbarzola.catalogo.schedule.infrastructure.persistence.entity.WeeklyScheduleEntity;
+import com.vbarzola.catalogo.schedule.infrastructure.persistence.repository.JpaWeeklyScheduleRepository;
+import com.vbarzola.catalogo.schedule.infrastructure.web.dto.WeeklyScheduleRequest;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Integration tests for the {@link WeeklyScheduleResource} REST controller.
+ * Integration tests for the {@link com.vbarzola.catalogo.schedule.infrastructure.web.controller.WeeklyScheduleController}.
  */
 @IntegrationTest
-@ExtendWith(MockitoExtension.class)
 @AutoConfigureMockMvc
 @WithMockUser
 class WeeklyScheduleResourceIT {
@@ -63,593 +51,248 @@ class WeeklyScheduleResourceIT {
     private static final Boolean DEFAULT_ENABLED = false;
     private static final Boolean UPDATED_ENABLED = true;
 
-    private static final Instant DEFAULT_CREATED_AT = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_CREATED_AT = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-    private static final Instant DEFAULT_UPDATED_AT = Instant.ofEpochMilli(0L);
-    private static final Instant UPDATED_UPDATED_AT = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
     private static final String ENTITY_API_URL = "/api/weekly-schedules";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
-    private static Random random = new Random();
-    private static AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
+    private static final Random random = new Random();
+    private static final AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
     @Autowired
     private ObjectMapper om;
 
     @Autowired
-    private WeeklyScheduleJpaRepository weeklyScheduleRepository;
-
-    @Mock
-    private WeeklyScheduleJpaRepository weeklyScheduleRepositoryMock;
+    private JpaWeeklyScheduleRepository weeklyScheduleRepository;
 
     @Autowired
-    private WeeklyScheduleMapper weeklyScheduleMapper;
-
-    @Mock
-    private WeeklyScheduleService weeklyScheduleServiceMock;
+    private JpaProfessionalRepository professionalRepository;
 
     @Autowired
-    private EntityManager em;
+    private JpaProfessionalCategoryRepository professionalCategoryRepository;
 
     @Autowired
     private MockMvc restWeeklyScheduleMockMvc;
 
-    private WeeklySchedule weeklySchedule;
+    private ProfessionalCategoryEntity category;
 
-    private WeeklySchedule insertedWeeklySchedule;
+    private ProfessionalEntity professional;
 
-    /**
-     * Create an entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
-     */
-    public static WeeklySchedule createEntity(EntityManager em) {
-        WeeklySchedule weeklySchedule = new WeeklySchedule()
+    private WeeklyScheduleEntity insertedWeeklySchedule;
+
+    private WeeklyScheduleEntity createEntity() {
+        return WeeklyScheduleEntity.builder()
+            .id(longCount.incrementAndGet())
             .dayOfWeek(DEFAULT_DAY_OF_WEEK)
             .startTime(DEFAULT_START_TIME)
             .endTime(DEFAULT_END_TIME)
             .slotDurationMinutes(DEFAULT_SLOT_DURATION_MINUTES)
             .enabled(DEFAULT_ENABLED)
-            .createdAt(DEFAULT_CREATED_AT)
-            .updatedAt(DEFAULT_UPDATED_AT);
-        // Add required entity
-        ProfessionalEntity professional;
-        if (TestUtil.findAll(em, ProfessionalEntity.class).isEmpty()) {
-            professional = createRequiredProfessional(em);
-        } else {
-            professional = TestUtil.findAll(em, ProfessionalEntity.class).get(0);
-        }
-        weeklySchedule.setProfessional(professional);
-        return weeklySchedule;
-    }
-
-    private static ProfessionalEntity createRequiredProfessional(EntityManager em) {
-        ProfessionalCategoryEntity category;
-        if (TestUtil.findAll(em, ProfessionalCategoryEntity.class).isEmpty()) {
-            category = ProfessionalCategoryEntity.builder().name("Category").description("Description").enabled(true).build();
-            em.persist(category);
-            em.flush();
-        } else {
-            category = TestUtil.findAll(em, ProfessionalCategoryEntity.class).get(0);
-        }
-        ProfessionalEntity professional = ProfessionalEntity.builder()
-            .firstName("FirstName")
-            .lastName("LastName")
-            .enabled(true)
-            .category(category)
+            .createdAt(Instant.ofEpochMilli(0L))
+            .updatedAt(Instant.ofEpochMilli(0L))
+            .professional(professional)
             .build();
-        em.persist(professional);
-        em.flush();
-        return professional;
-    }
-
-    /**
-     * Create an updated entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
-     */
-    public static WeeklySchedule createUpdatedEntity(EntityManager em) {
-        WeeklySchedule updatedWeeklySchedule = new WeeklySchedule()
-            .dayOfWeek(UPDATED_DAY_OF_WEEK)
-            .startTime(UPDATED_START_TIME)
-            .endTime(UPDATED_END_TIME)
-            .slotDurationMinutes(UPDATED_SLOT_DURATION_MINUTES)
-            .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-        // Add required entity
-        ProfessionalEntity professional;
-        if (TestUtil.findAll(em, ProfessionalEntity.class).isEmpty()) {
-            professional = createRequiredProfessional(em);
-        } else {
-            professional = TestUtil.findAll(em, ProfessionalEntity.class).get(0);
-        }
-        updatedWeeklySchedule.setProfessional(professional);
-        return updatedWeeklySchedule;
     }
 
     @BeforeEach
     void initTest() {
-        weeklySchedule = createEntity(em);
+        category = professionalCategoryRepository.saveAndFlush(
+            ProfessionalCategoryEntity.builder()
+                .id(longCount.incrementAndGet())
+                .name("Category")
+                .description("Description")
+                .enabled(true)
+                .build()
+        );
+        professional = professionalRepository.saveAndFlush(
+            ProfessionalEntity.builder()
+                .id(longCount.incrementAndGet())
+                .firstName("FirstName")
+                .lastName("LastName")
+                .enabled(true)
+                .category(category)
+                .build()
+        );
+        insertedWeeklySchedule = null;
     }
 
     @AfterEach
     void cleanup() {
         if (insertedWeeklySchedule != null) {
-            weeklyScheduleRepository.delete(insertedWeeklySchedule);
+            weeklyScheduleRepository.deleteById(insertedWeeklySchedule.getId());
             insertedWeeklySchedule = null;
         }
+        professionalRepository.deleteById(professional.getId());
+        professionalCategoryRepository.deleteById(category.getId());
     }
 
     @Test
     @Transactional
     void createWeeklySchedule() throws Exception {
-        long databaseSizeBeforeCreate = getRepositoryCount();
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-        var returnedWeeklyScheduleDTO = om.readValue(
-            restWeeklyScheduleMockMvc
-                .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString(),
-            WeeklyScheduleDTO.class
-        );
+        long databaseSizeBeforeCreate = weeklyScheduleRepository.count();
 
-        // Validate the WeeklySchedule in the database
-        assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
-        var returnedWeeklySchedule = weeklyScheduleMapper.toEntity(returnedWeeklyScheduleDTO);
-        assertWeeklyScheduleUpdatableFieldsEquals(returnedWeeklySchedule, getPersistedWeeklySchedule(returnedWeeklySchedule));
+        WeeklyScheduleRequest request = WeeklyScheduleRequest.builder()
+            .dayOfWeek(DEFAULT_DAY_OF_WEEK)
+            .startTime(DEFAULT_START_TIME)
+            .endTime(DEFAULT_END_TIME)
+            .slotDurationMinutes(DEFAULT_SLOT_DURATION_MINUTES)
+            .enabled(DEFAULT_ENABLED)
+            .professionalId(professional.getId())
+            .build();
 
-        insertedWeeklySchedule = returnedWeeklySchedule;
-    }
+        var response = restWeeklyScheduleMockMvc
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
 
-    @Test
-    @Transactional
-    void createWeeklyScheduleWithExistingId() throws Exception {
-        // Create the WeeklySchedule with an existing ID
-        weeklySchedule.setId(1L);
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        long databaseSizeBeforeCreate = getRepositoryCount();
-
-        // An entity with an existing ID cannot be created, so this API call must fail
-        restWeeklyScheduleMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isBadRequest());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeCreate);
-    }
-
-    @Test
-    @Transactional
-    void checkDayOfWeekIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        weeklySchedule.setDayOfWeek(null);
-
-        // Create the WeeklySchedule, which fails.
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        restWeeklyScheduleMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        Long createdId = om.readTree(response).get("id").asLong();
+        assertThat(weeklyScheduleRepository.count()).isEqualTo(databaseSizeBeforeCreate + 1);
+        insertedWeeklySchedule = weeklyScheduleRepository.findById(createdId).orElseThrow();
+        assertThat(insertedWeeklySchedule.getStartTime()).isEqualTo(DEFAULT_START_TIME);
+        assertThat(insertedWeeklySchedule.getProfessional().getId()).isEqualTo(professional.getId());
     }
 
     @Test
     @Transactional
     void checkStartTimeIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        weeklySchedule.setStartTime(null);
-
-        // Create the WeeklySchedule, which fails.
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        restWeeklyScheduleMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
-    void checkEndTimeIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        weeklySchedule.setEndTime(null);
-
-        // Create the WeeklySchedule, which fails.
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
+        long databaseSizeBeforeTest = weeklyScheduleRepository.count();
+        WeeklyScheduleRequest request = WeeklyScheduleRequest.builder()
+            .dayOfWeek(DEFAULT_DAY_OF_WEEK)
+            .endTime(DEFAULT_END_TIME)
+            .slotDurationMinutes(DEFAULT_SLOT_DURATION_MINUTES)
+            .enabled(DEFAULT_ENABLED)
+            .professionalId(professional.getId())
+            .build();
 
         restWeeklyScheduleMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
-    void checkSlotDurationMinutesIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        weeklySchedule.setSlotDurationMinutes(null);
-
-        // Create the WeeklySchedule, which fails.
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        restWeeklyScheduleMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
-    void checkEnabledIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        weeklySchedule.setEnabled(null);
-
-        // Create the WeeklySchedule, which fails.
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        restWeeklyScheduleMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isBadRequest());
-
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(weeklyScheduleRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void getAllWeeklySchedules() throws Exception {
-        // Initialize the database
-        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(weeklySchedule);
+        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(createEntity());
 
-        // Get all the weeklyScheduleList
         restWeeklyScheduleMockMvc
-            .perform(get(ENTITY_API_URL + "?sort=id,desc"))
+            .perform(get(ENTITY_API_URL + "?eagerload=false"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(weeklySchedule.getId().intValue())))
-            .andExpect(jsonPath("$.[*].dayOfWeek").value(hasItem(DEFAULT_DAY_OF_WEEK.toString())))
-            .andExpect(jsonPath("$.[*].startTime").value(hasItem(DEFAULT_START_TIME)))
-            .andExpect(jsonPath("$.[*].endTime").value(hasItem(DEFAULT_END_TIME)))
-            .andExpect(jsonPath("$.[*].slotDurationMinutes").value(hasItem(DEFAULT_SLOT_DURATION_MINUTES)))
-            .andExpect(jsonPath("$.[*].enabled").value(hasItem(DEFAULT_ENABLED)))
-            .andExpect(jsonPath("$.[*].createdAt").value(hasItem(DEFAULT_CREATED_AT.toString())))
-            .andExpect(jsonPath("$.[*].updatedAt").value(hasItem(DEFAULT_UPDATED_AT.toString())));
+            .andExpect(jsonPath("$.[*].id").value(hasItem(insertedWeeklySchedule.getId().intValue())));
     }
 
-    @SuppressWarnings({ "unchecked" })
-    void getAllWeeklySchedulesWithEagerRelationshipsIsEnabled() throws Exception {
-        when(weeklyScheduleServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
+    @Test
+    @Transactional
+    void getByProfessional() throws Exception {
+        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(createEntity());
 
-        restWeeklyScheduleMockMvc.perform(get(ENTITY_API_URL + "?eagerload=true")).andExpect(status().isOk());
-
-        verify(weeklyScheduleServiceMock, times(1)).findAllWithEagerRelationships(any());
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    void getAllWeeklySchedulesWithEagerRelationshipsIsNotEnabled() throws Exception {
-        when(weeklyScheduleServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
-
-        restWeeklyScheduleMockMvc.perform(get(ENTITY_API_URL + "?eagerload=false")).andExpect(status().isOk());
-        verify(weeklyScheduleRepositoryMock, times(1)).findAll(any(Pageable.class));
+        restWeeklyScheduleMockMvc
+            .perform(get(ENTITY_API_URL + "/by-professional").param("professionalId", professional.getId().toString()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(insertedWeeklySchedule.getId().intValue())));
     }
 
     @Test
     @Transactional
     void getWeeklySchedule() throws Exception {
-        // Initialize the database
-        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(weeklySchedule);
+        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(createEntity());
 
-        // Get the weeklySchedule
         restWeeklyScheduleMockMvc
-            .perform(get(ENTITY_API_URL_ID, weeklySchedule.getId()))
+            .perform(get(ENTITY_API_URL_ID, insertedWeeklySchedule.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.id").value(weeklySchedule.getId().intValue()))
+            .andExpect(jsonPath("$.id").value(insertedWeeklySchedule.getId().intValue()))
             .andExpect(jsonPath("$.dayOfWeek").value(DEFAULT_DAY_OF_WEEK.toString()))
             .andExpect(jsonPath("$.startTime").value(DEFAULT_START_TIME))
-            .andExpect(jsonPath("$.endTime").value(DEFAULT_END_TIME))
-            .andExpect(jsonPath("$.slotDurationMinutes").value(DEFAULT_SLOT_DURATION_MINUTES))
-            .andExpect(jsonPath("$.enabled").value(DEFAULT_ENABLED))
-            .andExpect(jsonPath("$.createdAt").value(DEFAULT_CREATED_AT.toString()))
-            .andExpect(jsonPath("$.updatedAt").value(DEFAULT_UPDATED_AT.toString()));
+            .andExpect(jsonPath("$.professional.id").value(professional.getId().intValue()));
     }
 
     @Test
     @Transactional
     void getNonExistingWeeklySchedule() throws Exception {
-        // Get the weeklySchedule
         restWeeklyScheduleMockMvc.perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE)).andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void putExistingWeeklySchedule() throws Exception {
-        // Initialize the database
-        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(weeklySchedule);
+        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(createEntity());
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the weeklySchedule
-        WeeklySchedule updatedWeeklySchedule = weeklyScheduleRepository.findById(weeklySchedule.getId()).orElseThrow();
-        // Disconnect from session so that the updates on updatedWeeklySchedule are not directly saved in db
-        em.detach(updatedWeeklySchedule);
-        updatedWeeklySchedule
+        WeeklyScheduleRequest request = WeeklyScheduleRequest.builder()
             .dayOfWeek(UPDATED_DAY_OF_WEEK)
             .startTime(UPDATED_START_TIME)
             .endTime(UPDATED_END_TIME)
             .slotDurationMinutes(UPDATED_SLOT_DURATION_MINUTES)
             .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(updatedWeeklySchedule);
+            .professionalId(professional.getId())
+            .build();
 
         restWeeklyScheduleMockMvc
             .perform(
-                put(ENTITY_API_URL_ID, weeklyScheduleDTO.getId())
+                put(ENTITY_API_URL_ID, insertedWeeklySchedule.getId())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(weeklyScheduleDTO))
+                    .content(om.writeValueAsBytes(request))
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.startTime").value(UPDATED_START_TIME));
 
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedWeeklyScheduleToMatchAllProperties(updatedWeeklySchedule);
+        WeeklyScheduleEntity updated = weeklyScheduleRepository.findById(insertedWeeklySchedule.getId()).orElseThrow();
+        assertThat(updated.getStartTime()).isEqualTo(UPDATED_START_TIME);
+        assertThat(updated.getDayOfWeek()).isEqualTo(UPDATED_DAY_OF_WEEK);
     }
 
     @Test
     @Transactional
     void putNonExistingWeeklySchedule() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        weeklySchedule.setId(longCount.incrementAndGet());
+        WeeklyScheduleRequest request = WeeklyScheduleRequest.builder()
+            .dayOfWeek(DEFAULT_DAY_OF_WEEK)
+            .startTime(DEFAULT_START_TIME)
+            .endTime(DEFAULT_END_TIME)
+            .slotDurationMinutes(DEFAULT_SLOT_DURATION_MINUTES)
+            .enabled(DEFAULT_ENABLED)
+            .professionalId(professional.getId())
+            .build();
 
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restWeeklyScheduleMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, weeklyScheduleDTO.getId())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(weeklyScheduleDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void putWithIdMismatchWeeklySchedule() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        weeklySchedule.setId(longCount.incrementAndGet());
-
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restWeeklyScheduleMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(weeklyScheduleDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void putWithMissingIdPathParamWeeklySchedule() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        weeklySchedule.setId(longCount.incrementAndGet());
-
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restWeeklyScheduleMockMvc
-            .perform(put(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isMethodNotAllowed());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+            .perform(put(ENTITY_API_URL_ID, Long.MAX_VALUE).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(request)))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void partialUpdateWeeklyScheduleWithPatch() throws Exception {
-        // Initialize the database
-        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(weeklySchedule);
+        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(createEntity());
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the weeklySchedule using partial update
-        WeeklySchedule partialUpdatedWeeklySchedule = new WeeklySchedule();
-        partialUpdatedWeeklySchedule.setId(weeklySchedule.getId());
-
-        partialUpdatedWeeklySchedule
-            .startTime(UPDATED_START_TIME)
-            .endTime(UPDATED_END_TIME)
-            .slotDurationMinutes(UPDATED_SLOT_DURATION_MINUTES)
-            .enabled(UPDATED_ENABLED)
-            .updatedAt(UPDATED_UPDATED_AT);
+        WeeklyScheduleRequest request = WeeklyScheduleRequest.builder().startTime(UPDATED_START_TIME).build();
 
         restWeeklyScheduleMockMvc
             .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedWeeklySchedule.getId())
+                patch(ENTITY_API_URL_ID, insertedWeeklySchedule.getId())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedWeeklySchedule))
+                    .content(om.writeValueAsBytes(request))
             )
             .andExpect(status().isOk());
 
-        // Validate the WeeklySchedule in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertWeeklyScheduleUpdatableFieldsEquals(
-            createUpdateProxyForBean(partialUpdatedWeeklySchedule, weeklySchedule),
-            getPersistedWeeklySchedule(weeklySchedule)
-        );
-    }
-
-    @Test
-    @Transactional
-    void fullUpdateWeeklyScheduleWithPatch() throws Exception {
-        // Initialize the database
-        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(weeklySchedule);
-
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-
-        // Update the weeklySchedule using partial update
-        WeeklySchedule partialUpdatedWeeklySchedule = new WeeklySchedule();
-        partialUpdatedWeeklySchedule.setId(weeklySchedule.getId());
-
-        partialUpdatedWeeklySchedule
-            .dayOfWeek(UPDATED_DAY_OF_WEEK)
-            .startTime(UPDATED_START_TIME)
-            .endTime(UPDATED_END_TIME)
-            .slotDurationMinutes(UPDATED_SLOT_DURATION_MINUTES)
-            .enabled(UPDATED_ENABLED)
-            .createdAt(UPDATED_CREATED_AT)
-            .updatedAt(UPDATED_UPDATED_AT);
-
-        restWeeklyScheduleMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedWeeklySchedule.getId())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedWeeklySchedule))
-            )
-            .andExpect(status().isOk());
-
-        // Validate the WeeklySchedule in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertWeeklyScheduleUpdatableFieldsEquals(partialUpdatedWeeklySchedule, getPersistedWeeklySchedule(partialUpdatedWeeklySchedule));
-    }
-
-    @Test
-    @Transactional
-    void patchNonExistingWeeklySchedule() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        weeklySchedule.setId(longCount.incrementAndGet());
-
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restWeeklyScheduleMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, weeklyScheduleDTO.getId())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(weeklyScheduleDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void patchWithIdMismatchWeeklySchedule() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        weeklySchedule.setId(longCount.incrementAndGet());
-
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restWeeklyScheduleMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(weeklyScheduleDTO))
-            )
-            .andExpect(status().isBadRequest());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-    }
-
-    @Test
-    @Transactional
-    void patchWithMissingIdPathParamWeeklySchedule() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        weeklySchedule.setId(longCount.incrementAndGet());
-
-        // Create the WeeklySchedule
-        WeeklyScheduleDTO weeklyScheduleDTO = weeklyScheduleMapper.toDto(weeklySchedule);
-
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        restWeeklyScheduleMockMvc
-            .perform(patch(ENTITY_API_URL).contentType("application/merge-patch+json").content(om.writeValueAsBytes(weeklyScheduleDTO)))
-            .andExpect(status().isMethodNotAllowed());
-
-        // Validate the WeeklySchedule in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        WeeklyScheduleEntity updated = weeklyScheduleRepository.findById(insertedWeeklySchedule.getId()).orElseThrow();
+        assertThat(updated.getStartTime()).isEqualTo(UPDATED_START_TIME);
+        assertThat(updated.getEndTime()).isEqualTo(DEFAULT_END_TIME);
+        assertThat(updated.getProfessional().getId()).isEqualTo(professional.getId());
     }
 
     @Test
     @Transactional
     void deleteWeeklySchedule() throws Exception {
-        // Initialize the database
-        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(weeklySchedule);
+        insertedWeeklySchedule = weeklyScheduleRepository.saveAndFlush(createEntity());
+        long databaseSizeBeforeDelete = weeklyScheduleRepository.count();
 
-        long databaseSizeBeforeDelete = getRepositoryCount();
-
-        // Delete the weeklySchedule
         restWeeklyScheduleMockMvc
-            .perform(delete(ENTITY_API_URL_ID, weeklySchedule.getId()).accept(MediaType.APPLICATION_JSON))
+            .perform(delete(ENTITY_API_URL_ID, insertedWeeklySchedule.getId()).accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
-        // Validate the database contains one less item
-        assertDecrementedRepositoryCount(databaseSizeBeforeDelete);
-    }
-
-    protected long getRepositoryCount() {
-        return weeklyScheduleRepository.count();
-    }
-
-    protected void assertIncrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore + 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertDecrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore - 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertSameRepositoryCount(long countBefore) {
-        assertThat(countBefore).isEqualTo(getRepositoryCount());
-    }
-
-    protected WeeklySchedule getPersistedWeeklySchedule(WeeklySchedule weeklySchedule) {
-        return weeklyScheduleRepository.findById(weeklySchedule.getId()).orElseThrow();
-    }
-
-    protected void assertPersistedWeeklyScheduleToMatchAllProperties(WeeklySchedule expectedWeeklySchedule) {
-        assertWeeklyScheduleAllPropertiesEquals(expectedWeeklySchedule, getPersistedWeeklySchedule(expectedWeeklySchedule));
-    }
-
-    protected void assertPersistedWeeklyScheduleToMatchUpdatableProperties(WeeklySchedule expectedWeeklySchedule) {
-        assertWeeklyScheduleAllUpdatablePropertiesEquals(expectedWeeklySchedule, getPersistedWeeklySchedule(expectedWeeklySchedule));
+        assertThat(weeklyScheduleRepository.count()).isEqualTo(databaseSizeBeforeDelete - 1);
+        insertedWeeklySchedule = null;
     }
 }

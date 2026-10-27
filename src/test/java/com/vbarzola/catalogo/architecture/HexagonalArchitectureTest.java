@@ -63,4 +63,31 @@ public class HexagonalArchitectureTest {
         .dependOnClassesThat()
         .resideInAPackage("com.vbarzola.catalogo.professional.infrastructure.persistence..")
         .as("professional web adapters must not depend on professional persistence adapters");
+
+    @ArchTest
+    static final ArchRule schedule_domain_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.schedule.domain..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.schedule.infrastructure..")
+        .as("schedule domain layer must not depend on schedule infrastructure");
+
+    @ArchTest
+    static final ArchRule schedule_application_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.schedule.application..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.schedule.infrastructure..")
+        .as("schedule application layer must not depend on schedule infrastructure");
+
+    @ArchTest
+    static final ArchRule schedule_web_must_not_depend_on_persistence = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.schedule.infrastructure.web..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.schedule.infrastructure.persistence..")
+        .as("schedule web adapters must not depend on schedule persistence adapters");
 }

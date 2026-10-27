@@ -2,15 +2,15 @@ package com.vbarzola.catalogo.domain.service;
 
 import com.vbarzola.catalogo.domain.model.CatalogSnapshot;
 import com.vbarzola.catalogo.domain.model.CatalogSyncStatus;
-import com.vbarzola.catalogo.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.domain.port.in.SyncFullCatalogUseCase;
 import com.vbarzola.catalogo.domain.port.out.CatalogSyncStatusRepositoryPort;
 import com.vbarzola.catalogo.domain.port.out.CatedraSnapshotClient;
-import com.vbarzola.catalogo.domain.port.out.WeeklyScheduleRepositoryPort;
 import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalCategoryRepository;
 import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalRepository;
+import com.vbarzola.catalogo.schedule.domain.model.WeeklySchedule;
+import com.vbarzola.catalogo.schedule.domain.ports.out.WeeklyScheduleRepository;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,14 +26,14 @@ public class SyncFullCatalogService implements SyncFullCatalogUseCase {
     private final CatedraSnapshotClient snapshotClient;
     private final ProfessionalCategoryRepository categoryRepo;
     private final ProfessionalRepository professionalRepo;
-    private final WeeklyScheduleRepositoryPort scheduleRepo;
+    private final WeeklyScheduleRepository scheduleRepo;
     private final CatalogSyncStatusRepositoryPort syncStatusRepo;
 
     public SyncFullCatalogService(
         CatedraSnapshotClient snapshotClient,
         ProfessionalCategoryRepository categoryRepo,
         ProfessionalRepository professionalRepo,
-        WeeklyScheduleRepositoryPort scheduleRepo,
+        WeeklyScheduleRepository scheduleRepo,
         CatalogSyncStatusRepositoryPort syncStatusRepo
     ) {
         this.snapshotClient = snapshotClient;

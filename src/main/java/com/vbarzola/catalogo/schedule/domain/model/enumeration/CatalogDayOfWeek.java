@@ -1,4 +1,4 @@
-package com.vbarzola.catalogo.domain.model.enumeration;
+package com.vbarzola.catalogo.schedule.domain.model.enumeration;
 
 /**
  * The CatalogDayOfWeek enumeration.
