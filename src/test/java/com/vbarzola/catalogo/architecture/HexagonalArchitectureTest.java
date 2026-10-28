@@ -108,4 +108,31 @@ public class HexagonalArchitectureTest {
         .dependOnClassesThat()
         .resideInAPackage("com.vbarzola.catalogo.sync.infrastructure..")
         .as("sync application layer must not depend on sync infrastructure");
+
+    @ArchTest
+    static final ArchRule user_domain_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.user.domain..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.user.infrastructure..")
+        .as("user domain layer must not depend on user infrastructure");
+
+    @ArchTest
+    static final ArchRule user_application_must_not_depend_on_infrastructure = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.user.application..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.user.infrastructure..")
+        .as("user application layer must not depend on user infrastructure");
+
+    @ArchTest
+    static final ArchRule user_web_must_not_depend_on_persistence = noClasses()
+        .that()
+        .resideInAPackage("com.vbarzola.catalogo.user.infrastructure.web..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("com.vbarzola.catalogo.user.infrastructure.persistence..")
+        .as("user web adapters must not depend on user persistence adapters");
 }

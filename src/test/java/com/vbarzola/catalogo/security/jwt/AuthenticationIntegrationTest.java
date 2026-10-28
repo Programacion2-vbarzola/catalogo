@@ -4,7 +4,7 @@ import com.vbarzola.catalogo.config.SecurityConfiguration;
 import com.vbarzola.catalogo.config.SecurityJwtConfiguration;
 import com.vbarzola.catalogo.config.WebConfigurer;
 import com.vbarzola.catalogo.management.SecurityMetersService;
-import com.vbarzola.catalogo.web.rest.AuthenticateController;
+import com.vbarzola.catalogo.user.infrastructure.web.controller.AuthenticateController;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

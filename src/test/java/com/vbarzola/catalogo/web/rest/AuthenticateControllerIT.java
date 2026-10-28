@@ -11,9 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vbarzola.catalogo.IntegrationTest;
-import com.vbarzola.catalogo.domain.User;
-import com.vbarzola.catalogo.repository.UserRepository;
-import com.vbarzola.catalogo.web.rest.vm.LoginVM;
+import com.vbarzola.catalogo.user.infrastructure.persistence.entity.UserEntity;
+import com.vbarzola.catalogo.user.infrastructure.persistence.repository.JpaUserRepository;
+import com.vbarzola.catalogo.user.infrastructure.web.dto.LoginVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,7 +33,7 @@ class AuthenticateControllerIT {
     private ObjectMapper om;
 
     @Autowired
-    private UserRepository userRepository;
+    private JpaUserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -44,7 +44,7 @@ class AuthenticateControllerIT {
     @Test
     @Transactional
     void testAuthorize() throws Exception {
-        User user = new User();
+        UserEntity user = new UserEntity();
         user.setLogin("user-jwt-controller");
         user.setEmail("user-jwt-controller@example.com");
         user.setActivated(true);
@@ -67,7 +67,7 @@ class AuthenticateControllerIT {
     @Test
     @Transactional
     void testAuthorizeWithRememberMe() throws Exception {
-        User user = new User();
+        UserEntity user = new UserEntity();
         user.setLogin("user-jwt-controller-remember-me");
         user.setEmail("user-jwt-controller-remember-me@example.com");
         user.setActivated(true);

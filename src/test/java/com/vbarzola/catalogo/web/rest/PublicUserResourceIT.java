@@ -5,10 +5,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.vbarzola.catalogo.IntegrationTest;
-import com.vbarzola.catalogo.domain.User;
-import com.vbarzola.catalogo.repository.UserRepository;
 import com.vbarzola.catalogo.security.AuthoritiesConstants;
-import com.vbarzola.catalogo.service.UserService;
+import com.vbarzola.catalogo.user.application.service.UserService;
+import com.vbarzola.catalogo.user.infrastructure.persistence.entity.UserEntity;
+import com.vbarzola.catalogo.user.infrastructure.persistence.repository.JpaUserRepository;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 class PublicUserResourceIT {
 
     @Autowired
-    private UserRepository userRepository;
+    private JpaUserRepository userRepository;
 
     @Autowired
     private UserService userService;
@@ -37,7 +37,7 @@ class PublicUserResourceIT {
     @Autowired
     private MockMvc restUserMockMvc;
 
-    private User user;
+    private UserEntity user;
     private Long numberOfUsers;
 
     @BeforeEach

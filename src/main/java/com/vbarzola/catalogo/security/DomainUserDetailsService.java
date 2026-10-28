@@ -1,8 +1,8 @@
 package com.vbarzola.catalogo.security;
 
-import com.vbarzola.catalogo.domain.Authority;
-import com.vbarzola.catalogo.domain.User;
-import com.vbarzola.catalogo.repository.UserRepository;
+import com.vbarzola.catalogo.user.infrastructure.persistence.entity.AuthorityEntity;
+import com.vbarzola.catalogo.user.infrastructure.persistence.entity.UserEntity;
+import com.vbarzola.catalogo.user.infrastructure.persistence.repository.JpaUserRepository;
 import java.util.*;
 import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
 import org.slf4j.Logger;
@@ -23,9 +23,9 @@ public class DomainUserDetailsService implements UserDetailsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DomainUserDetailsService.class);
 
-    private final UserRepository userRepository;
+    private final JpaUserRepository userRepository;
 
-    public DomainUserDetailsService(UserRepository userRepository) {
+    public DomainUserDetailsService(JpaUserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -48,7 +48,7 @@ public class DomainUserDetailsService implements UserDetailsService {
             .orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the database"));
     }
 
-    private org.springframework.security.core.userdetails.User createSpringSecurityUser(String lowercaseLogin, User user) {
+    private org.springframework.security.core.userdetails.User createSpringSecurityUser(String lowercaseLogin, UserEntity user) {
         if (!user.isActivated()) {
             throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
         }
@@ -78,11 +78,11 @@ public class DomainUserDetailsService implements UserDetailsService {
             return super.hashCode();
         }
 
-        public static UserWithId fromUser(User user) {
+        public static UserWithId fromUser(UserEntity user) {
             return new UserWithId(
                 user.getLogin(),
                 user.getPassword(),
-                user.getAuthorities().stream().map(Authority::getName).map(SimpleGrantedAuthority::new).toList(),
+                user.getAuthorities().stream().map(AuthorityEntity::getName).map(SimpleGrantedAuthority::new).toList(),
                 user.getId()
             );
         }

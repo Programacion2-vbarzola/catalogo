@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.vbarzola.catalogo.IntegrationTest;
-import com.vbarzola.catalogo.domain.User;
-import com.vbarzola.catalogo.repository.UserRepository;
-import com.vbarzola.catalogo.service.UserService;
+import com.vbarzola.catalogo.user.application.service.UserService;
+import com.vbarzola.catalogo.user.domain.model.User;
+import com.vbarzola.catalogo.user.domain.ports.out.UserRepository;
 import java.util.Locale;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -43,39 +43,39 @@ class DomainUserDetailsServiceIT {
     private UserDetailsService domainUserDetailsService;
 
     public User getUserOne() {
-        User userOne = new User();
-        userOne.setLogin(USER_ONE_LOGIN);
-        userOne.setPassword(RandomStringUtils.insecure().nextAlphanumeric(60));
-        userOne.setActivated(true);
-        userOne.setEmail(USER_ONE_EMAIL);
-        userOne.setFirstName("userOne");
-        userOne.setLastName("doe");
-        userOne.setLangKey("en");
-        return userOne;
+        return User.builder()
+            .login(USER_ONE_LOGIN)
+            .password(RandomStringUtils.insecure().nextAlphanumeric(60))
+            .activated(true)
+            .email(USER_ONE_EMAIL)
+            .firstName("userOne")
+            .lastName("doe")
+            .langKey("en")
+            .build();
     }
 
     public User getUserTwo() {
-        User userTwo = new User();
-        userTwo.setLogin(USER_TWO_LOGIN);
-        userTwo.setPassword(RandomStringUtils.insecure().nextAlphanumeric(60));
-        userTwo.setActivated(true);
-        userTwo.setEmail(USER_TWO_EMAIL);
-        userTwo.setFirstName("userTwo");
-        userTwo.setLastName("doe");
-        userTwo.setLangKey("en");
-        return userTwo;
+        return User.builder()
+            .login(USER_TWO_LOGIN)
+            .password(RandomStringUtils.insecure().nextAlphanumeric(60))
+            .activated(true)
+            .email(USER_TWO_EMAIL)
+            .firstName("userTwo")
+            .lastName("doe")
+            .langKey("en")
+            .build();
     }
 
     public User getUserThree() {
-        User userThree = new User();
-        userThree.setLogin(USER_THREE_LOGIN);
-        userThree.setPassword(RandomStringUtils.insecure().nextAlphanumeric(60));
-        userThree.setActivated(false);
-        userThree.setEmail(USER_THREE_EMAIL);
-        userThree.setFirstName("userThree");
-        userThree.setLastName("doe");
-        userThree.setLangKey("en");
-        return userThree;
+        return User.builder()
+            .login(USER_THREE_LOGIN)
+            .password(RandomStringUtils.insecure().nextAlphanumeric(60))
+            .activated(false)
+            .email(USER_THREE_EMAIL)
+            .firstName("userThree")
+            .lastName("doe")
+            .langKey("en")
+            .build();
     }
 
     @BeforeEach
