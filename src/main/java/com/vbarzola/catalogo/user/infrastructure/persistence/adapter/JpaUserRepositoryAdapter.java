@@ -11,9 +11,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Keeps the Hibernate session open for the duration of each method so that
+ * {@link UserMapper#toDomainModel} can lazily initialize UserEntity.authorities
+ * (open-in-view is disabled for this app).
+ */
 @Component
 @RequiredArgsConstructor
+@Transactional
 public class JpaUserRepositoryAdapter implements UserRepository {
 
     private final JpaUserRepository jpaRepository;
