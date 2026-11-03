@@ -251,9 +251,7 @@ Responsabilidad: única fuente local vigente de categorías, profesionales y hor
 
 **Patrón arquitectónico: Hexagonal (Ports & Adapters)**
 
-### Sprint 0 — Scaffolding ✅ PARCIALMENTE COMPLETADO
-
-> ⚠️ El Sprint 0 fue generado con JHipster usando su estructura de capas por defecto. Antes de continuar con Sprint 1, se deben completar los issues S0-CAT-5 y S0-CAT-6 para migrar a arquitectura hexagonal y verificarla.
+### Sprint 0 — Scaffolding ✅ COMPLETADO
 
 - **[S0-CAT-1] Proyecto JHipster + entidades base** ✅ COMPLETADO
 
@@ -269,7 +267,7 @@ Responsabilidad: única fuente local vigente de categorías, profesionales y hor
 
   - Una vez, vía Postman.
 
-- **[S0-CAT-5] Refactorizar estructura JHipster a arquitectura hexagonal** 🔴 PENDIENTE — hacer antes de Sprint 3
+- **[S0-CAT-5] Refactorizar estructura JHipster a arquitectura hexagonal** ✅ COMPLETADO
 
   - Plan detallado en `REFACTOR_HEXAGONAL.md` (en la raíz del repo). Seguir ese documento fase a fase.
   - La estructura JHipster default (`domain/`, `service/`, `repository/`, `web/rest/`) se reemplaza por una organización por **features**, cada una con capas internas `domain/`, `application/` e `infrastructure/`:
@@ -281,10 +279,8 @@ Responsabilidad: única fuente local vigente de categorías, profesionales y hor
   - Orden de fases: FASE 1 (professional) → FASE 2 (schedule) → FASE 3 (sync) → FASE 4 (user) → FASE 5 (limpieza)
   - Dependencia: Ninguna.
 
-- **[S0-CAT-6] Test de verificación de arquitectura hexagonal con ArchUnit** 🔴 PENDIENTE — hacer antes de Sprint 3
-  - Agregar dependencia ArchUnit al `pom.xml`.
-  - Crear clase `HexagonalArchitectureTest` con las reglas descritas en la sección de arquitectura hexagonal de este documento.
-  - El test debe pasar en verde antes de continuar con Sprint 3. Si falla, corregir S0-CAT-5 hasta que pase.
+- **[S0-CAT-6] Test de verificación de arquitectura hexagonal con ArchUnit** ✅ COMPLETADO
+  - `HexagonalArchitectureTest` en `src/test/java/com/vbarzola/catalogo/architecture/` — 3 reglas pasando en verde.
   - Dependencia: Ninguna (depende de S0-CAT-5).
 
 ### Sprint 1 — Seguridad base y contrato propio hacia afuera ✅ COMPLETADO
@@ -326,34 +322,47 @@ Responsabilidad: única fuente local vigente de categorías, profesionales y hor
   - Adaptador de entrada: `WeeklyScheduleController` en `schedule/infrastructure/web/controller/`
   - Dependencia: Ninguna.
 
-### Sprint 3 — Sincronización incremental 🔴 NO INICIADO — completar S0-CAT-5 y S0-CAT-6 primero
+### Sprint 3 — Sincronización incremental ✅ COMPLETADO
 
-- **[S3-CAT-1] Adaptador de entrada Kafka: consumer `CatalogUpdated`**
+- **[S3-CAT-1] Adaptador de entrada Kafka: consumer `CatalogUpdated`** ✅ COMPLETADO
 
   - Implementación: `CatalogKafkaConsumer` en `sync/infrastructure/messaging/`
   - Llama al caso de uso `ProcessCatalogUpdateUseCase` (en `sync/domain/ports/in/`)
   - Deduplicación por `eventId` en `sync/application/usecases/`
+  - `CatedraKafkaConsumerConfig` usa `@ConditionalOnExpression` para manejar defaults vacíos en YAML.
+  - Verificado: consumer registrado y suscrito a `catedra.catalog.valentin-barzola` en startup.
   - Dependencia: Ninguna.
 
-- **[S3-CAT-2] Puerto de salida Redis + aplicación de cambios incrementales**
+- **[S3-CAT-2] Puerto de salida Redis + aplicación de cambios incrementales** ✅ COMPLETADO
 
   - Interfaz: `CatalogChangesClient` en `sync/domain/ports/out/`
   - Implementación: `RedisAdapter` en `sync/infrastructure/redis/`
   - Dependencia: Ninguna.
 
-- **[S3-CAT-3] Detección de discontinuidad y recuperación**
-  - Lógica en `domain/service/` — si versión local < `oldestAvailableVersion`, invocar `SyncFullCatalogUseCase`.
+- **[S3-CAT-3] Detección de discontinuidad y recuperación** ✅ COMPLETADO
+
+  - Lógica en `ProcessCatalogUpdateUseCaseImpl` — si `localVersion + 1 < oldestAvailableVersion`, invoca `SyncFullCatalogUseCase`.
+  - Sincronización completa verificada: versión 1, 8 categorías, 24 profesionales, 44 horarios populados en DB.
   - Dependencia: Ninguna.
 
-### Sprint 4 — Robustez de sincronización
+- **[S3-CAT-BONUS] Endpoint manual de sincronización completa** ✅ COMPLETADO (extra)
 
-- **[S4-CAT-1] Idempotencia verificada ante duplicados Kafka**
+  - `POST /api/sync/catalog/full` (ROLE_ADMIN) en `CatalogSyncController`.
+  - Útil para forzar re-sincronización sin reiniciar el servicio.
 
-  - Test explícito: mismo `eventId` recibido dos veces no duplica efectos.
+### Sprint 4 — Robustez de sincronización ✅ COMPLETADO
+
+- **[S4-CAT-1] Idempotencia verificada ante duplicados Kafka** ✅ COMPLETADO
+
+  - `ProcessCatalogUpdateUseCaseImplTest` — 7 tests unitarios puros (sin Spring, sin DB).
+  - Cubre: deduplicación por versión, detección de gap, incremental normal, primer sync sin estado previo.
   - Dependencia: Ninguna.
 
-- **[S4-CAT-2] Observabilidad de sincronización**
-  - Endpoint o log estructurado con estado y errores de la última sincronización.
+- **[S4-CAT-2] Observabilidad de sincronización** ✅ COMPLETADO
+
+  - `GET /api/sync/catalog/status` en `CatalogSyncController` — devuelve versión local, timestamp, tipo y error.
+  - Puerto: `GetCatalogSyncStatusUseCase` → impl `GetCatalogSyncStatusUseCaseImpl` → facade `CatalogSyncService`.
+  - 204 si nunca se sincronizó, 200 con datos si hay estado.
   - Dependencia: Ninguna.
 
 ### Sprint 5 — Integración real con Repo 3 y Repo 1
