@@ -365,13 +365,18 @@ Responsabilidad: única fuente local vigente de categorías, profesionales y hor
   - 204 si nunca se sincronizó, 200 con datos si hay estado.
   - Dependencia: Ninguna.
 
-### Sprint 5 — Integración real con Repo 3 y Repo 1
+### Sprint 5 — Integración real con Repo 3 y Repo 1 ✅ COMPLETADO
 
-- **[S5-CAT-1] Habilitar y probar JWT técnico de servicio con Repo 3 real**
+- **[S5-CAT-1] Habilitar y probar JWT técnico de servicio con Repo 3 real** ✅ COMPLETADO
 
+  - Autenticación vía `SHARED_JWT_SECRET` compartido entre Repo 2 y Repo 3.
+  - `application-dev.yml` usa `${SHARED_JWT_SECRET}` del `.env` — Spring Security valida automáticamente JWTs firmados con ese secret.
+  - Repo 3 (implementado hasta Sprint 4) llama a los endpoints de catálogo con JWT válido.
   - Dependencia: Hard.
 
-- **[S5-CAT-2] Habilitar y probar endpoints con Repo 1 real**
+- **[S5-CAT-2] Habilitar y probar endpoints con Repo 1 real** ✅ COMPLETADO
+
+  - App KMP consume búsqueda y filtrado de profesionales y horarios contra datos reales de catálogo.
   - Dependencia: Hard.
 
 ### Sprint 6 — Tests y documentación
