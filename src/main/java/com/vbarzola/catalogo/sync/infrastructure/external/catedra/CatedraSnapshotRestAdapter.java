@@ -66,7 +66,7 @@ public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
 
         List<WeeklySchedule> schedules = mapSchedules(response.getWeeklySchedules(), professionalById);
 
-        return new CatalogSnapshot(version, categories, professionals, schedules);
+        return new CatalogSnapshot(version, response.getGeneratedAt(), categories, professionals, schedules);
     }
 
     private List<ProfessionalCategory> mapCategories(List<CatedraSnapshotResponse.CategoryDTO> dtos) {

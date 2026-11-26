@@ -15,6 +15,7 @@ public class CatalogSyncStatusMapper {
             .id(domain.getId())
             .localVersion(domain.getLocalVersion())
             .appliedAt(domain.getAppliedAt())
+            .snapshotGeneratedAt(domain.getSnapshotGeneratedAt())
             .syncType(domain.getSyncType())
             .errorMessage(domain.getErrorMessage())
             .build();
@@ -28,6 +29,7 @@ public class CatalogSyncStatusMapper {
             .id(entity.getId())
             .localVersion(entity.getLocalVersion())
             .appliedAt(entity.getAppliedAt())
+            .snapshotGeneratedAt(entity.getSnapshotGeneratedAt())
             .syncType(entity.getSyncType())
             .errorMessage(entity.getErrorMessage())
             .build();

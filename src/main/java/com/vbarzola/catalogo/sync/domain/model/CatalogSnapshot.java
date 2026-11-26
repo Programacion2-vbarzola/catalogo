@@ -3,22 +3,26 @@ package com.vbarzola.catalogo.sync.domain.model;
 import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.schedule.domain.model.WeeklySchedule;
+import java.time.Instant;
 import java.util.List;
 
 public class CatalogSnapshot {
 
     private final long version;
+    private final Instant generatedAt;
     private final List<ProfessionalCategory> categories;
     private final List<Professional> professionals;
     private final List<WeeklySchedule> schedules;
 
     public CatalogSnapshot(
         long version,
+        Instant generatedAt,
         List<ProfessionalCategory> categories,
         List<Professional> professionals,
         List<WeeklySchedule> schedules
     ) {
         this.version = version;
+        this.generatedAt = generatedAt;
         this.categories = List.copyOf(categories);
         this.professionals = List.copyOf(professionals);
         this.schedules = List.copyOf(schedules);
@@ -26,6 +30,10 @@ public class CatalogSnapshot {
 
     public long getVersion() {
         return version;
+    }
+
+    public Instant getGeneratedAt() {
+        return generatedAt;
     }
 
     public List<ProfessionalCategory> getCategories() {

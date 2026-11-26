@@ -38,7 +38,15 @@ public class CatalogSyncController {
     public ResponseEntity<CatalogSyncStatusResponse> getSyncStatus() {
         return catalogSyncService
             .getSyncStatus()
-            .map(s -> new CatalogSyncStatusResponse(s.getLocalVersion(), s.getAppliedAt(), s.getSyncType(), s.getErrorMessage()))
+            .map(s ->
+                new CatalogSyncStatusResponse(
+                    s.getLocalVersion(),
+                    s.getAppliedAt(),
+                    s.getSnapshotGeneratedAt(),
+                    s.getSyncType(),
+                    s.getErrorMessage()
+                )
+            )
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.noContent().build());
     }

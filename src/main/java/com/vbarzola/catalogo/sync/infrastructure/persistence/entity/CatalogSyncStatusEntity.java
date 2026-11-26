@@ -37,6 +37,9 @@ public class CatalogSyncStatusEntity {
     @Column(name = "applied_at", nullable = false)
     private Instant appliedAt;
 
+    @Column(name = "snapshot_generated_at", nullable = true)
+    private Instant snapshotGeneratedAt;
+
     @Column(name = "sync_type", length = 20)
     private String syncType;
 

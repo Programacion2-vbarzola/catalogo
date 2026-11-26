@@ -57,6 +57,7 @@ public class SyncFullCatalogUseCaseImpl implements SyncFullCatalogUseCase {
         CatalogSyncStatus status = syncStatusRepo.findSingleton().orElseGet(CatalogSyncStatus::new);
         status.setLocalVersion(snapshot.getVersion());
         status.setAppliedAt(Instant.now());
+        status.setSnapshotGeneratedAt(snapshot.getGeneratedAt());
         status.setSyncType("FULL");
         status.setErrorMessage(null);
         syncStatusRepo.save(status);

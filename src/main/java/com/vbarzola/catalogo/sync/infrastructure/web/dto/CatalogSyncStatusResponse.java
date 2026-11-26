@@ -10,6 +10,7 @@ public class CatalogSyncStatusResponse {
 
     private Long localVersion;
     private Instant appliedAt;
+    private Instant snapshotGeneratedAt;
     private String syncType;
     private String errorMessage;
 }

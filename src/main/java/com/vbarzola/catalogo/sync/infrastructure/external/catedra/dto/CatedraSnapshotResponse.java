@@ -8,6 +8,7 @@ import java.util.List;
 public class CatedraSnapshotResponse {
 
     private Long snapshotVersion;
+    private Instant generatedAt;
     private List<CategoryDTO> professionalCategories;
     private List<ProfessionalDTO> professionals;
     private List<ScheduleDTO> weeklySchedules;
@@ -18,6 +19,14 @@ public class CatedraSnapshotResponse {
 
     public void setSnapshotVersion(Long snapshotVersion) {
         this.snapshotVersion = snapshotVersion;
+    }
+
+    public Instant getGeneratedAt() {
+        return generatedAt;
+    }
+
+    public void setGeneratedAt(Instant generatedAt) {
+        this.generatedAt = generatedAt;
     }
 
     public List<CategoryDTO> getProfessionalCategories() {
