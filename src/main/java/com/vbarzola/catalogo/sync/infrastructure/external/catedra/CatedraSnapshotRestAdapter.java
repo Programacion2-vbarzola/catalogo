@@ -5,6 +5,7 @@ import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.schedule.domain.model.WeeklySchedule;
 import com.vbarzola.catalogo.schedule.domain.model.enumeration.CatalogDayOfWeek;
+import com.vbarzola.catalogo.sync.application.exception.SnapshotCorruptException;
 import com.vbarzola.catalogo.sync.domain.model.CatalogSnapshot;
 import com.vbarzola.catalogo.sync.domain.ports.out.CatedraSnapshotClient;
 import com.vbarzola.catalogo.sync.infrastructure.external.catedra.dto.CatedraSnapshotResponse;
@@ -93,8 +94,9 @@ public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
         for (CatedraSnapshotResponse.ProfessionalDTO dto : dtos) {
             ProfessionalCategory category = categoryById.get(dto.getCategoryId());
             if (category == null) {
-                LOG.warn("Skipping professional id={}: category id={} not found in snapshot", dto.getId(), dto.getCategoryId());
-                continue;
+                throw new SnapshotCorruptException(
+                    "Professional id=" + dto.getId() + " references unknown categoryId=" + dto.getCategoryId()
+                );
             }
             Professional professional = new Professional();
             professional.setId(dto.getId());
@@ -115,8 +117,9 @@ public class CatedraSnapshotRestAdapter implements CatedraSnapshotClient {
         for (CatedraSnapshotResponse.ScheduleDTO dto : dtos) {
             Professional professional = professionalById.get(dto.getProfessionalId());
             if (professional == null) {
-                LOG.warn("Skipping schedule id={}: professional id={} not found in snapshot", dto.getId(), dto.getProfessionalId());
-                continue;
+                throw new SnapshotCorruptException(
+                    "Schedule id=" + dto.getId() + " references unknown professionalId=" + dto.getProfessionalId()
+                );
             }
             WeeklySchedule schedule = new WeeklySchedule();
             schedule.setId(dto.getId());

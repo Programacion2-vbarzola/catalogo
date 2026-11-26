@@ -34,6 +34,7 @@
         <m2e.apt.activation>jdt_apt</m2e.apt.activation>
         <run.addResources>false</run.addResources>
         <spring-boot.version>${project.parent.version}</spring-boot.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
         <archunit-junit5.version>1.4.0</archunit-junit5.version>
         <checkstyle.version>10.23.1</checkstyle.version>
         <git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
@@ -518,6 +519,9 @@
                             <include>**/*IntTest*</include>
                         </includes>
                         <argLine>@{argLine} -Dspring.profiles.active=${profile.test}</argLine>
+                        <environmentVariables>
+                            <DOCKER_API_VERSION>1.44</DOCKER_API_VERSION>
+                        </environmentVariables>
                     </configuration>
                     <executions>
                         <execution>
@@ -566,6 +570,9 @@
                         <systemPropertyVariables>
                             <java.util.logging.config.file>src/test/resources/logback.xml</java.util.logging.config.file>
                         </systemPropertyVariables>
+                        <environmentVariables>
+                            <DOCKER_API_VERSION>1.44</DOCKER_API_VERSION>
+                        </environmentVariables>
                     </configuration>
                 </plugin>
                 <plugin>

@@ -1,4 +1,4 @@
 org.springframework.test.context.ContextCustomizerFactory = \
-    ar.edu.um.programacion2.catalogo.config.\
-    SqlTestContainersSpringContextCustomizerFactory,ar.edu.um.programacion2.\
-    catalogo.config.KafkaTestContainersSpringContextCustomizerFactory
+    com.vbarzola.catalogo.config.\
+    SqlTestContainersSpringContextCustomizerFactory,com.vbarzola.catalogo.\
+    config.KafkaTestContainersSpringContextCustomizerFactory
