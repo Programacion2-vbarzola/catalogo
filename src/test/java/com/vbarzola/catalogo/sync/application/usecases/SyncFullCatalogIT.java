@@ -19,6 +19,7 @@ import com.vbarzola.catalogo.sync.domain.ports.in.SyncFullCatalogUseCase;
 import com.vbarzola.catalogo.sync.domain.ports.out.CatalogSyncStatusRepository;
 import com.vbarzola.catalogo.sync.domain.ports.out.CatedraSnapshotClient;
 import com.vbarzola.catalogo.sync.infrastructure.persistence.repository.JpaCatalogSyncStatusRepository;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -185,6 +186,8 @@ class SyncFullCatalogIT {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void givenSnapshot(long version, List<ProfessionalCategory> cats, List<Professional> pros, List<WeeklySchedule> scheds) {
-        org.mockito.Mockito.when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(version, cats, pros, scheds));
+        org.mockito.Mockito.when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(version, Instant.now(), cats, pros, scheds)
+        );
     }
 }

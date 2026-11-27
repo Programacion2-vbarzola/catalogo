@@ -20,6 +20,7 @@ import com.vbarzola.catalogo.sync.domain.model.CatalogSnapshot;
 import com.vbarzola.catalogo.sync.domain.model.CatalogSyncStatus;
 import com.vbarzola.catalogo.sync.domain.ports.out.CatalogSyncStatusRepository;
 import com.vbarzola.catalogo.sync.domain.ports.out.CatedraSnapshotClient;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -99,7 +100,7 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_savesAllCategoriesFromSnapshot() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(cat1, cat2), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, Instant.now(), List.of(cat1, cat2), List.of(), List.of()));
 
         useCase.syncFullCatalog();
 
@@ -109,7 +110,9 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_savesAllProfessionalsFromSnapshot() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(cat1, cat2), List.of(pro1, pro2), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(1L, Instant.now(), List.of(cat1, cat2), List.of(pro1, pro2), List.of())
+        );
 
         useCase.syncFullCatalog();
 
@@ -120,7 +123,7 @@ class SyncFullCatalogUseCaseImplTest {
     @Test
     void syncFullCatalog_savesAllSchedulesFromSnapshot() {
         when(snapshotClient.fetchSnapshot()).thenReturn(
-            new CatalogSnapshot(1L, List.of(cat1, cat2), List.of(pro1, pro2), List.of(sched1, sched2))
+            new CatalogSnapshot(1L, Instant.now(), List.of(cat1, cat2), List.of(pro1, pro2), List.of(sched1, sched2))
         );
 
         useCase.syncFullCatalog();
@@ -133,7 +136,9 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_deletesInReverseFkOrder_beforeSaving() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(cat1), List.of(pro1), List.of(sched1)));
+        when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(1L, Instant.now(), List.of(cat1), List.of(pro1), List.of(sched1))
+        );
 
         useCase.syncFullCatalog();
 
@@ -145,7 +150,9 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_savesInFkOrder_afterDeletes() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(cat1), List.of(pro1), List.of(sched1)));
+        when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(1L, Instant.now(), List.of(cat1), List.of(pro1), List.of(sched1))
+        );
 
         useCase.syncFullCatalog();
 
@@ -157,7 +164,9 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_deletesBeforeSaves() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(cat1), List.of(pro1), List.of(sched1)));
+        when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(1L, Instant.now(), List.of(cat1), List.of(pro1), List.of(sched1))
+        );
 
         useCase.syncFullCatalog();
 
@@ -173,7 +182,9 @@ class SyncFullCatalogUseCaseImplTest {
     @Test
     void syncFullCatalog_updatesSyncStatus_withSnapshotVersion() {
         long snapshotVersion = 42L;
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(snapshotVersion, List.of(), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(snapshotVersion, Instant.now(), List.of(), List.of(), List.of())
+        );
 
         useCase.syncFullCatalog();
 
@@ -182,7 +193,9 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_updatesSyncStatus_afterAllCollectionsSaved() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(cat1), List.of(pro1), List.of(sched1)));
+        when(snapshotClient.fetchSnapshot()).thenReturn(
+            new CatalogSnapshot(1L, Instant.now(), List.of(cat1), List.of(pro1), List.of(sched1))
+        );
 
         useCase.syncFullCatalog();
 
@@ -193,7 +206,7 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_setsFullSyncType_onStatus() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, Instant.now(), List.of(), List.of(), List.of()));
 
         useCase.syncFullCatalog();
 
@@ -202,7 +215,7 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_clearsErrorMessage_onStatus() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, Instant.now(), List.of(), List.of(), List.of()));
 
         useCase.syncFullCatalog();
 
@@ -213,7 +226,7 @@ class SyncFullCatalogUseCaseImplTest {
     void syncFullCatalog_reusesSingleton_whenStatusAlreadyExists() {
         CatalogSyncStatus existing = CatalogSyncStatus.builder().id(1L).localVersion(0L).build();
         when(syncStatusRepo.findSingleton()).thenReturn(Optional.of(existing));
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(5L, List.of(), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(5L, Instant.now(), List.of(), List.of(), List.of()));
 
         useCase.syncFullCatalog();
 
@@ -225,7 +238,7 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_emptySnapshot_clearsDbAndUpdatesStatus() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(0L, List.of(), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(0L, Instant.now(), List.of(), List.of(), List.of()));
 
         useCase.syncFullCatalog();
 
@@ -242,7 +255,7 @@ class SyncFullCatalogUseCaseImplTest {
 
     @Test
     void syncFullCatalog_setsAppliedAt_onStatus() {
-        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, List.of(), List.of(), List.of()));
+        when(snapshotClient.fetchSnapshot()).thenReturn(new CatalogSnapshot(1L, Instant.now(), List.of(), List.of(), List.of()));
 
         useCase.syncFullCatalog();
 
