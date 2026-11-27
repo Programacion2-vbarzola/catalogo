@@ -26,6 +26,7 @@ public class RedisAdapter implements CatalogChangesClient {
     private static final Logger LOG = LoggerFactory.getLogger(RedisAdapter.class);
 
     private static final String KEY_OLDEST_VERSION = "catedra:sync:oldest-available-version";
+    private static final String KEY_LATEST_VERSION = "catedra:sync:current-version";
     private static final String KEY_CHANGES_PREFIX = "catedra:sync:changes:";
     private static final String HASH_CATEGORIES = "catedra:sync:professional-categories";
     private static final String HASH_PROFESSIONALS = "catedra:sync:professionals";
@@ -57,6 +58,14 @@ public class RedisAdapter implements CatalogChangesClient {
     public long getOldestAvailableVersion() {
         try (Jedis jedis = jedisPool.getResource()) {
             String value = jedis.get(KEY_OLDEST_VERSION);
+            return value != null ? Long.parseLong(value.trim()) : 0L;
+        }
+    }
+
+    @Override
+    public long getLatestAvailableVersion() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String value = jedis.get(KEY_LATEST_VERSION);
             return value != null ? Long.parseLong(value.trim()) : 0L;
         }
     }

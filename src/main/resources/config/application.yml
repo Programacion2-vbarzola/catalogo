@@ -250,3 +250,4 @@ application:
     kafka-appointment-actions-topic: ${CATEDRA_KAFKA_APPOINTMENT_ACTIONS_TOPIC:}
     kafka-appointment-phone-topic: ${CATEDRA_KAFKA_APPOINTMENT_PHONE_TOPIC:}
     catedra-jwt: ${CATEDRA_JWT:}
+    incremental-version-threshold: ${CATEDRA_INCREMENTAL_VERSION_THRESHOLD:50}

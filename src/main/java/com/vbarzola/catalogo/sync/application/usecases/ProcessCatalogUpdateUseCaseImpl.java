@@ -1,5 +1,6 @@
 package com.vbarzola.catalogo.sync.application.usecases;
 
+import com.vbarzola.catalogo.config.ApplicationProperties;
 import com.vbarzola.catalogo.professional.domain.model.Professional;
 import com.vbarzola.catalogo.professional.domain.model.ProfessionalCategory;
 import com.vbarzola.catalogo.professional.domain.ports.out.ProfessionalCategoryRepository;
@@ -32,6 +33,7 @@ public class ProcessCatalogUpdateUseCaseImpl implements ProcessCatalogUpdateUseC
     private final ProfessionalRepository professionalRepo;
     private final WeeklyScheduleRepository scheduleRepo;
     private final CatalogSyncStatusRepository syncStatusRepo;
+    private final ApplicationProperties props;
 
     @Override
     public void process(String eventId, long newVersion) {
@@ -46,8 +48,17 @@ public class ProcessCatalogUpdateUseCaseImpl implements ProcessCatalogUpdateUseC
 
         // S3-CAT-3: detección de discontinuidad — oldestAvailable viene de Redis
         long oldestAvailable = changesClient.getOldestAvailableVersion();
-        if (localVersion + 1 < oldestAvailable) {
+        if (localVersion < oldestAvailable) {
             LOG.warn("Gap detected: localVersion={} oldestAvailable={} — triggering full sync", localVersion, oldestAvailable);
+            syncFullCatalogUseCase.syncFullCatalog();
+            return;
+        }
+
+        // S3-CAT-4: umbral — demasiadas versiones pendientes, full sync más eficiente
+        long versionsToApply = newVersion - localVersion;
+        int threshold = props.getCatedra().getIncrementalVersionThreshold();
+        if (versionsToApply > threshold) {
+            LOG.warn("Threshold exceeded: {} versions to apply > threshold={} — triggering full sync", versionsToApply, threshold);
             syncFullCatalogUseCase.syncFullCatalog();
             return;
         }

@@ -54,6 +54,7 @@ public class ApplicationProperties {
         private String kafkaAppointmentActionsTopic;
         private String kafkaAppointmentPhoneTopic;
         private String catedraJwt;
+        private int incrementalVersionThreshold = 50;
 
         public String getRestBaseUrl() {
             return restBaseUrl;
@@ -157,6 +158,14 @@ public class ApplicationProperties {
 
         public void setCatedraJwt(String catedraJwt) {
             this.catedraJwt = catedraJwt;
+        }
+
+        public int getIncrementalVersionThreshold() {
+            return incrementalVersionThreshold;
+        }
+
+        public void setIncrementalVersionThreshold(int incrementalVersionThreshold) {
+            this.incrementalVersionThreshold = incrementalVersionThreshold;
         }
     }
     // jhipster-needle-application-properties-property-class
